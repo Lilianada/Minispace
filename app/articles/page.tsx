@@ -1,8 +1,6 @@
 "use client"
 
-import type React from "react"
-
-import { useState, useEffect, useCallback } from "react"
+import React, { useState, useEffect, useCallback, useRef } from "react"
 import {
   collection,
   query,
@@ -15,7 +13,7 @@ import {
   type QueryDocumentSnapshot,
   getCountFromServer,
 } from "firebase/firestore"
-import { db } from "@/lib/firebase"
+import * as firebase from "@/lib/firebase"
 import { Navbar } from "@/components/navbar"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -23,6 +21,7 @@ import { Badge } from "@/components/ui/badge"
 import { Search } from "lucide-react"
 import Link from "next/link"
 import { Footer } from "@/components/footer"
+import { Skeleton } from "@/components/ui/skeleton"
 
 interface Article {
   id: string
@@ -40,6 +39,7 @@ export default function ArticlesPage() {
   const [articles, setArticles] = useState<Article[]>([])
   const [loading, setLoading] = useState(true)
   const [lastVisible, setLastVisible] = useState<QueryDocumentSnapshot<DocumentData> | null>(null)
+  const lastVisibleRef = React.useRef<QueryDocumentSnapshot<DocumentData> | null>(null)
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(0)
   const [searchTerm, setSearchTerm] = useState("")
@@ -50,9 +50,9 @@ export default function ArticlesPage() {
 
   const fetchArticleCount = async () => {
     try {
-      if (!db) throw new Error("Firestore is not initialized")
+      if (!firebase.db) throw new Error("Firestore is not initialized")
 
-      const articlesQuery = query(collection(db, "Articles"), where("published", "==", true))
+      const articlesQuery = query(collection(firebase.db, "Articles"), where("published", "==", true))
       const snapshot = await getCountFromServer(articlesQuery)
       const count = snapshot.data().count
       setTotalArticles(count)
@@ -73,10 +73,10 @@ export default function ArticlesPage() {
       try {
         setLoading(true)
 
-        if (!db) throw new Error("Firestore is not initialized")
+        if (!firebase.db) throw new Error("Firestore is not initialized")
 
         let articlesQuery = query(
-          collection(db, "Articles"),
+          collection(firebase.db, "Articles"),
           where("published", "==", true),
           orderBy("createdAt", "desc"),
           limit(ARTICLES_PER_PAGE),
@@ -87,7 +87,7 @@ export default function ArticlesPage() {
           setCurrentPage(1)
         } else if (lastVisible && !pageReset && currentPage > 1) {
           articlesQuery = query(
-            collection(db, "Articles"),
+            collection(firebase.db, "Articles"),
             where("published", "==", true),
             orderBy("createdAt", "desc"),
             startAfter(lastVisible),
@@ -100,6 +100,7 @@ export default function ArticlesPage() {
 
           if (!querySnapshot.empty) {
             setLastVisible(querySnapshot.docs[querySnapshot.docs.length - 1])
+            lastVisibleRef.current = querySnapshot.docs[querySnapshot.docs.length - 1]
           }
 
           const fetchedArticles = querySnapshot.docs.map((doc) => {
@@ -156,7 +157,7 @@ export default function ArticlesPage() {
 
             // Try to fetch without ordering as a fallback
             const fallbackQuery = query(
-              collection(db, "Articles"),
+              collection(firebase.db, "Articles"),
               where("published", "==", true),
               limit(ARTICLES_PER_PAGE),
             )
@@ -199,28 +200,19 @@ export default function ArticlesPage() {
         setLoading(false)
       }
     },
-    [db, lastVisible],
+    [firebase.db],
   )
 
   useEffect(() => {
     fetchArticles().catch((err) => {
       console.error("Error in initial fetch:", err)
     })
-  }, [fetchArticles])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [firebase.db])
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
     fetchArticles(searchTerm, selectedTag, true)
-  }
-
-  const handleTagClick = (tag: string) => {
-    if (selectedTag === tag) {
-      setSelectedTag(null)
-      fetchArticles(searchTerm, null, true)
-    } else {
-      setSelectedTag(tag)
-      fetchArticles(searchTerm, tag, true)
-    }
   }
 
   const handlePreviousPage = () => {
@@ -253,11 +245,10 @@ export default function ArticlesPage() {
   return (
     <>
       <Navbar />
-      <div className="container mx-auto py-8 px-4 min-h-[calc(100vh-8rem)]">
-        <h1 className="text-3xl font-bold mb-8">Articles</h1>
+      <div className="container py-8 px-4 min-h-[calc(100vh-8rem)] max-w-3xl">
 
         <div className="mb-8">
-          <form onSubmit={handleSearch} className="flex gap-2 mb-4">
+          <form onSubmit={handleSearch} className="flex gap-2 mb-4 max-w-xl">
             <Input
               type="text"
               placeholder="Search by title or author..."
@@ -270,26 +261,24 @@ export default function ArticlesPage() {
               <span className="sr-only">Search</span>
             </Button>
           </form>
-
-          {allTags.length > 0 && (
-            <div className="flex flex-wrap gap-2">
-              {allTags.map((tag) => (
-                <Badge
-                  key={tag}
-                  variant={selectedTag === tag ? "default" : "outline"}
-                  className="cursor-pointer"
-                  onClick={() => handleTagClick(tag)}
-                >
-                  {tag}
-                </Badge>
-              ))}
-            </div>
-          )}
         </div>
 
         {loading ? (
-          <div className="flex justify-center my-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+          <div className="space-y-6 my-12">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="py-4 px-2 rounded-md">
+                <div className="flex flex-wrap gap-2 items-center justify-start text-left mb-2">
+                  <Skeleton className="h-5 w-1/3" />
+                  <Skeleton className="h-4 w-24 ml-2" />
+                </div>
+                <Skeleton className="h-4 w-full mb-2" />
+                <div className="flex gap-2">
+                  {[...Array(3)].map((_, j) => (
+                    <Skeleton key={j} className="h-5 w-12 rounded-full" />
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
         ) : (
           <>
@@ -307,16 +296,19 @@ export default function ArticlesPage() {
                 {articles.map((article) => (
                   <Link href={`/articles/${article.id}`} key={article.id}>
                     <div className="py-4 px-2 rounded-md hover:bg-muted/50 transition-colors">
-                      <h2 className="text-base font-semibold mb-1">{article.title}</h2>
-                      <p className="text-sm text-muted-foreground mb-2">{article.excerpt}</p>
-                      <div className="flex flex-wrap justify-between items-center gap-2">
-                        <span className="text-sm">{article.authorName}</span>
+                    <div className="flex flex-wrap gap-2 items-center justify-start text-left">
+                      <h2 className="text-base font-semibold">{article.title}</h2>
+                        <span className="text-sm text-muted-foreground">by {article.authorName}</span>
+                    </div>
+                      <p className="text-sm text-muted-foreground">{article.excerpt}</p>
+                      <div className="flex flex-wrap justify-start items-center gap-2">
                         {article.tags && article.tags.length > 0 && (
                           <div className="flex flex-wrap gap-2">
                             {article.tags.map((tag) => (
-                              <Badge key={tag} variant="secondary" className="text-xs">
-                                {tag}
-                              </Badge>
+                              // <Badge key={tag} variant="secondary" className="text-xs font-light text-muted-foreground">
+                              //   {tag}
+                              // </Badge>
+                              <p className="text-muted-foreground text-[10px]" key={tag}>#{tag}</p>
                             ))}
                           </div>
                         )}

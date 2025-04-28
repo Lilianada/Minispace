@@ -1,6 +1,6 @@
-import { initializeApp } from "firebase/app"
-import { getAuth, setPersistence, browserLocalPersistence } from "firebase/auth"
-import { getFirestore } from "firebase/firestore"
+import { initializeApp, getApps, type FirebaseApp } from "firebase/app";
+import { getAuth, setPersistence, browserLocalPersistence, type Auth } from "firebase/auth";
+import { getFirestore, type Firestore } from "firebase/firestore";
 
 // Firebase configuration
 const firebaseConfig = {
@@ -10,46 +10,41 @@ const firebaseConfig = {
   storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-}
+};
 
 // Check if all required config values are present
 const isConfigValid = Object.values(firebaseConfig).every(
-  (value) => value !== undefined && value !== null && value !== "",
-)
+  (value) => value !== undefined && value !== null && value !== ""
+);
 
-// Initialize Firebase
-let app
-let auth
-let db
-
-// Only initialize Firebase on the client side
-if (typeof window !== "undefined") {
-  try {
-    if (!isConfigValid) {
-      console.error(
-        "Firebase configuration is incomplete. Check your environment variables:",
-        Object.keys(firebaseConfig)
-          .filter((key) => !firebaseConfig[key])
-          .join(", "),
-      )
-    } else {
-      // Initialize Firebase
-      app = initializeApp(firebaseConfig)
-
-      // Initialize Auth with persistence
-      auth = getAuth(app)
-      setPersistence(auth, browserLocalPersistence).catch((error) => {
-        console.error("Error setting auth persistence:", error)
-      })
-
-      // Initialize Firestore
-      db = getFirestore(app)
-
-      console.log("Firebase initialized successfully")
-    }
-  } catch (error) {
-    console.error("Error initializing Firebase:", error)
-  }
+if (!isConfigValid) {
+  console.error(
+    "Firebase configuration is incomplete. Check your environment variables:",
+    Object.keys(firebaseConfig)
+      .filter((key) => !firebaseConfig[key])
+      .join(", ")
+  );
 }
 
-export { app, auth, db }
+// Singleton pattern for Firebase initialization (SSR + Client)
+let app: FirebaseApp;
+let auth: Auth;
+let db: Firestore;
+
+if (isConfigValid) {
+  if (!getApps().length) {
+    app = initializeApp(firebaseConfig);
+  } else {
+    app = getApps()[0];
+  }
+  auth = getAuth(app);
+  // Only set persistence on client
+  if (typeof window !== "undefined") {
+    setPersistence(auth, browserLocalPersistence).catch((error) => {
+      console.error("Error setting auth persistence:", error);
+    });
+  }
+  db = getFirestore(app);
+}
+
+export { app, auth, db };

@@ -9,7 +9,7 @@ import { FirebaseInitializer } from "@/components/firebase-initializer"
 export const metadata = {
   title: "MINI - Read and Write without the noise",
   description: "A minimalist platform for reading and writing",
-    generator: 'v0.dev'
+  generator: "Lily's Lab"
 }
 
 export default function RootLayout({
@@ -22,7 +22,7 @@ export default function RootLayout({
       <body className={`${GeistSans.className} antialiased min-h-screen bg-background text-foreground flex flex-col`}>
         <FirebaseInitializer />
         <AuthProvider>
-          <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+          <ThemeProvider attribute="class" defaultTheme="dark" themes={['dark']} enableSystem={false} disableTransitionOnChange>
             <div className="flex-1 flex flex-col">{children}</div>
             <Toaster />
           </ThemeProvider>

@@ -12,6 +12,7 @@ import { Eye, EyeOff, Edit, Mail, UserIcon } from "lucide-react"
 import Link from "next/link"
 import { Footer } from "@/components/footer"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Skeleton } from "@/components/ui/skeleton"
 
 interface Article {
   id: string
@@ -104,8 +105,49 @@ export default function ProfilePage() {
       <>
         <Navbar />
         <div className="container mx-auto py-8 px-4 min-h-[calc(100vh-8rem)]">
-          <div className="flex justify-center my-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+          <div className="mb-8">
+            <Card>
+              <CardHeader>
+                <Skeleton className="h-6 w-40 mb-2" />
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <Skeleton className="h-10 w-10 rounded-full" />
+                    <div>
+                      <Skeleton className="h-4 w-32 mb-1" />
+                      <Skeleton className="h-5 w-40" />
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Skeleton className="h-10 w-10 rounded-full" />
+                    <div>
+                      <Skeleton className="h-4 w-32 mb-1" />
+                      <Skeleton className="h-5 w-40" />
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+          <div>
+            <Skeleton className="h-7 w-52 mb-4" />
+            <div className="space-y-4">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="py-4 px-2 rounded-md">
+                  <div className="flex justify-between items-start mb-2">
+                    <Skeleton className="h-5 w-1/3" />
+                    <Skeleton className="h-5 w-24" />
+                  </div>
+                  <Skeleton className="h-4 w-full mb-2" />
+                  <div className="flex gap-2">
+                    {[...Array(2)].map((_, j) => (
+                      <Skeleton key={j} className="h-5 w-12 rounded-full" />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
         <Footer />

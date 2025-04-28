@@ -52,7 +52,6 @@ export function FirebaseInitializer() {
         // Initialize Firestore
         const db = getFirestore(app)
 
-        console.log("Firebase initialized successfully by initializer component")
         return true
       } catch (error) {
         console.error("Error initializing Firebase:", error)

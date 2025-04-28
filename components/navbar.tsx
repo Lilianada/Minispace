@@ -42,7 +42,7 @@ export function Navbar() {
               >
                 <Button variant="ghost" size="sm" className="gap-2">
                   <PenLine className="h-4 w-4" />
-                  Write
+                  
                 </Button>
               </Link>
               <Link
@@ -51,7 +51,7 @@ export function Navbar() {
               >
                 <Button variant="ghost" size="sm" className="gap-2">
                   <User className="h-4 w-4" />
-                  Profile
+                  
                 </Button>
               </Link>
               <Link
@@ -60,7 +60,7 @@ export function Navbar() {
               >
                 <Button variant="ghost" size="sm" className="gap-2">
                   <Settings className="h-4 w-4" />
-                  Settings
+                  
                 </Button>
               </Link>
               <Button variant="ghost" size="sm" className="gap-2" onClick={() => logout()} disabled={loggingOut}>
@@ -72,7 +72,7 @@ export function Navbar() {
                 ) : (
                   <>
                     <LogOut className="h-4 w-4" />
-                    Logout
+                    
                   </>
                 )}
               </Button>

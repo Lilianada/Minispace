@@ -2,6 +2,9 @@
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
+import { db } from "@/lib/firebase"
+import { collection, addDoc } from "firebase/firestore"
+import { toast } from "@/components/ui/use-toast"
 import {
   Dialog,
   DialogContent,
@@ -24,27 +27,23 @@ export function IssueDialog() {
 
   const handleSubmit = async () => {
     if (!name.trim() || !issue.trim()) return
-
     setIsSubmitting(true)
-
-    // Here you would typically send the data to your backend
-    // For now, we'll just simulate a submission with a timeout
     try {
-      console.log("Issue submitted:", { name, issue })
-
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-
+      await addDoc(collection(db, "issues"), {
+        name: name.trim(),
+        issue: issue.trim(),
+        createdAt: new Date(),
+      })
       setIsSubmitted(true)
       setName("")
       setIssue("")
-
-      // Close the dialog after showing success message for 2 seconds
+      toast({ title: "Issue submitted!", description: "Thank you for your feedback." })
       setTimeout(() => {
         setIsSubmitted(false)
         setOpen(false)
       }, 2000)
     } catch (error) {
+      toast({ title: "Submission failed", description: "Could not submit your issue. Please try again.", variant: "destructive" })
       console.error("Error submitting issue:", error)
     } finally {
       setIsSubmitting(false)
@@ -56,7 +55,7 @@ export function IssueDialog() {
       <DialogTrigger asChild>
         <Button variant="outline">Submit Issue</Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="shadow-lg">
         {isSubmitted ? (
           <div className="py-6 text-center">
             <h3 className="text-lg font-medium mb-2">Thank you!</h3>
@@ -72,34 +71,27 @@ export function IssueDialog() {
                 Let us know about any issues you've encountered while using the app.
               </DialogDescription>
             </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="name" className="text-right">
-                  Name
-                </Label>
-                <Input
-                  id="name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="col-span-3"
-                  disabled={isSubmitting}
-                />
-              </div>
-              <div className="grid grid-cols-4 items-start gap-4">
-                <Label htmlFor="issue" className="text-right">
-                  Issue
-                </Label>
-                <Textarea
-                  id="issue"
-                  value={issue}
-                  onChange={(e) => setIssue(e.target.value)}
-                  placeholder="Please be as descriptive as possible"
-                  className="col-span-3 h-32"
-                  disabled={isSubmitting}
-                />
-              </div>
+            <div className="grid grid-cols-1 gap-4 py-4 justify-start items-center">
+              <Label htmlFor="name" className="md:col-span-1">Name</Label>
+              <Input
+                id="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="md:col-span-3"
+                placeholder="Your name"
+                disabled={isSubmitting}
+              />
+              <Label htmlFor="issue" className="md:col-span-1">Issue</Label>
+              <Textarea
+                id="issue"
+                value={issue}
+                onChange={(e) => setIssue(e.target.value)}
+                placeholder="Please be as descriptive as possible"
+                className="md:col-span-3 h-32"
+                disabled={isSubmitting}
+              />
             </div>
-            <DialogFooter>
+            <DialogFooter className="justify-end">
               <Button type="submit" onClick={handleSubmit} disabled={isSubmitting}>
                 {isSubmitting ? "Submitting..." : "Submit"}
               </Button>

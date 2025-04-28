@@ -1,13 +1,11 @@
 "use client"
 
-import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
 import { VariantProps, cva } from "class-variance-authority"
 import { PanelLeft } from "lucide-react"
 
 import { useIsMobile } from "@/hooks/use-mobile"
 import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
 import { Sheet, SheetContent } from "@/components/ui/sheet"
@@ -735,6 +733,10 @@ const SidebarMenuSubButton = React.forwardRef<
 })
 SidebarMenuSubButton.displayName = "SidebarMenuSubButton"
 
+import { LogOut } from "lucide-react"
+import { useAuth } from "@/lib/auth-context"
+
+// ...existing exports
 export {
   Sidebar,
   SidebarContent,
@@ -760,4 +762,23 @@ export {
   SidebarSeparator,
   SidebarTrigger,
   useSidebar,
+}
+
+// --- Custom SidebarLogoutButton ---
+import * as React from "react"
+import { Button } from "@/components/ui/button"
+
+export function SidebarLogoutButton() {
+  const { logout, loggingOut } = useAuth()
+  return (
+    <Button
+      variant="ghost"
+      className="w-full flex items-center justify-start gap-2 text-red-600 mt-4 mb-2"
+      onClick={logout}
+      disabled={loggingOut}
+    >
+      <LogOut className="w-4 h-4" />
+      {loggingOut ? "Logging out..." : "Log out"}
+    </Button>
+  )
 }
