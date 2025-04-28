@@ -8,12 +8,6 @@ import { AuthProvider } from "@/lib/auth-context"
 import { FirebaseInitializer } from "@/components/firebase-initializer"
 import Sidebar from "@/components/sidebar"
 
-export const metadata = {
-  title: "MINI - Read and Write without the noise",
-  description: "A minimalist platform for reading and writing",
-  generator: "Lily's Lab"
-}
-
 export default function RootLayout({
   children,
 }: {
@@ -21,6 +15,48 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <title>MINI – Minimalist Reading & Writing Platform</title>
+        <meta name="description" content="A minimalist platform for reading and writing. Publish, read, and discover articles without the noise." />
+        <meta name="keywords" content="minimalist, writing, reading, articles, blog, platform, distraction-free, MINI" />
+        <meta name="author" content="Lily's Lab" />
+        <meta property="og:title" content="MINI – Minimalist Reading & Writing Platform" />
+        <meta property="og:description" content="A minimalist platform for reading and writing. Publish, read, and discover articles without the noise." />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://mini.lilianada.com/" />
+        <meta property="og:image" content="/logo.png" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="MINI – Minimalist Reading & Writing Platform" />
+        <meta name="twitter:description" content="A minimalist platform for reading and writing. Publish, read, and discover articles without the noise." />
+        <meta name="twitter:image" content="/logo.png" />
+        <link rel="icon" href="/logo.png" type="image/png" />
+        <link rel="canonical" href="https://mini.lilianada.com/" />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "WebSite",
+              "name": "MINI – Minimalist Reading & Writing Platform",
+              "url": "https://mini.lilianada.com/",
+              "description": "A minimalist platform for reading and writing. Publish, read, and discover articles without the noise.",
+              "image": "https://mini.lilianada.com/logo.png",
+              "publisher": {
+                "@type": "Organization",
+                "name": "Lily's Lab",
+                "logo": {
+                  "@type": "ImageObject",
+                  "url": "https://mini.lilianada.com/logo.png"
+                }
+              },
+              "sameAs": [
+                "https://twitter.com/lilianada",
+                "https://github.com/Lilianada"
+              ]
+            })
+          }}
+        />
+      </head>
       <body className={`${GeistSans.className} antialiased min-h-screen bg-background text-foreground flex flex-col`}>
         <FirebaseInitializer />
         <AuthProvider>
