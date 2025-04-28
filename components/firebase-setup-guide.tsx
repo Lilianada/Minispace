@@ -25,7 +25,7 @@ export function FirebaseSetupGuide() {
           Firebase Setup Guide
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="  max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Firebase Setup Guide</DialogTitle>
           <DialogDescription>

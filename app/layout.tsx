@@ -3,8 +3,10 @@ import { GeistSans } from "geist/font/sans"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "@/components/ui/toaster"
+import { Footer } from "@/components/footer"
 import { AuthProvider } from "@/lib/auth-context"
 import { FirebaseInitializer } from "@/components/firebase-initializer"
+import Sidebar from "@/components/sidebar"
 
 export const metadata = {
   title: "MINI - Read and Write without the noise",
@@ -23,7 +25,12 @@ export default function RootLayout({
         <FirebaseInitializer />
         <AuthProvider>
           <ThemeProvider attribute="class" defaultTheme="dark" themes={['dark']} enableSystem={false} disableTransitionOnChange>
-            <div className="flex-1 flex flex-col">{children}</div>
+            <div className=" max-w-4xl mx-auto w-full flex relative">
+            <Sidebar />
+            <main className="flex-1 flex flex-col  border-x">
+              {children}
+              </main>
+            </div>
             <Toaster />
           </ThemeProvider>
         </AuthProvider>

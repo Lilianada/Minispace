@@ -43,7 +43,7 @@ export default function Home() {
       {/* Footer */}
       <footer className="p-4  flex justify-between">
         <span className="text-sm text-muted-foreground">Truly minimal</span>
-        <span className="text-sm text-muted-foreground">Built for simplicity</span>
+        <span className="text-sm text-muted-foreground">Built for simplicity.</span>
       </footer>
      
     </div>

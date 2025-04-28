@@ -25,14 +25,13 @@ interface Article {
 
 export default function ProfilePage() {
   const [articles, setArticles] = useState<Article[]>([])
-  const [loading, setLoading] = useState(true)
-  const { user, userData } = useAuth()
-  const router = useRouter()
+  const { user, userData, loading } = useAuth();
+  const router = useRouter();
 
   useEffect(() => {
-    if (!user) {
-      router.push("/login")
-      return
+    if (!loading && !user) {
+      router.push("/login");
+      return;
     }
 
     const fetchUserArticles = async () => {
@@ -43,7 +42,7 @@ export default function ProfilePage() {
         try {
           const articlesQuery = query(
             collection(db, "Articles"),
-            where("authorId", "==", user.uid),
+            where("authorId", "==", user?.uid),
             orderBy("createdAt", "desc"),
           )
 
@@ -66,7 +65,7 @@ export default function ProfilePage() {
             console.log("Create Firestore index at:", indexUrl)
 
             // Try to fetch without ordering as a fallback
-            const fallbackQuery = query(collection(db, "Articles"), where("authorId", "==", user.uid))
+            const fallbackQuery = query(collection(db, "Articles"), where("authorId", "==", user?.uid))
 
             const fallbackSnapshot = await getDocs(fallbackQuery)
 
@@ -92,9 +91,7 @@ export default function ProfilePage() {
       } catch (error) {
         console.error("Error fetching articles:", error)
         setArticles([])
-      } finally {
-        setLoading(false)
-      }
+      } 
     }
 
     fetchUserArticles()
@@ -104,7 +101,7 @@ export default function ProfilePage() {
     return (
       <>
         <Navbar />
-        <div className="container mx-auto py-8 px-4 min-h-[calc(100vh-8rem)]">
+        <div className="container mx-auto   py-8 px-4 min-h-[calc(100vh-8rem)]">
           <div className="mb-8">
             <Card>
               <CardHeader>
@@ -150,7 +147,7 @@ export default function ProfilePage() {
             </div>
           </div>
         </div>
-        <Footer />
+         
       </>
     )
   }
@@ -158,7 +155,7 @@ export default function ProfilePage() {
   return (
     <>
       <Navbar />
-      <div className="container mx-auto py-8 px-4 min-h-[calc(100vh-8rem)]">
+      <div className="container mx-auto px-4  py-8 sm:px-8 min-h-[calc(100vh-8rem)]">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
           <h1 className="text-2xl font-bold">My Profile</h1>
           <Link href="/write">
@@ -169,7 +166,7 @@ export default function ProfilePage() {
         <div className="mb-8">
           <Card>
             <CardHeader>
-              <CardTitle>Profile Information</CardTitle>
+              <CardTitle className="text-xl">Profile Information</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">

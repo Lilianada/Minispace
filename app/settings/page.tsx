@@ -33,14 +33,14 @@ export default function SettingsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [deleteConfirmPassword, setDeleteConfirmPassword] = useState("")
-  const { user, userData, logout } = useAuth()
-  const router = useRouter()
-  const { toast } = useToast()
+  const { user, userData, logout, loading } = useAuth();
+  const router = useRouter();
+  const { toast } = useToast();
 
   useEffect(() => {
-    if (!user) {
-      router.push("/login")
-      return
+    if (!loading && !user) {
+      router.push("/login");
+      return;
     }
 
     if (userData) {
@@ -209,7 +209,7 @@ export default function SettingsPage() {
   return (
     <>
       <Navbar />
-      <div className="container mx-auto py-8 px-4 max-w-2xl">
+      <div className="mx-auto py-8 px-4 sm:px-8">
         <h1 className="text-2xl font-bold mb-8">Settings</h1>
 
         <div className="space-y-8">

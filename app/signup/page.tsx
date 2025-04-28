@@ -205,7 +205,7 @@ export default function SignupPage() {
           </CardFooter>
         </Card>
       </div>
-      <Footer />
+       
     </>
   )
 }

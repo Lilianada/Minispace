@@ -121,11 +121,13 @@ export default function ArticlesPage() {
           // Filter by search term if provided
           let filteredArticles = fetchedArticles
           if (searchTerm) {
+            const lowerSearchTerm = searchTerm.toLowerCase();
             filteredArticles = fetchedArticles.filter(
               (article) =>
-                article.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                article.authorName?.toLowerCase().includes(searchTerm.toLowerCase()),
-            )
+                article.title.toLowerCase().includes(lowerSearchTerm) ||
+                article.authorName?.toLowerCase().includes(lowerSearchTerm) ||
+                (Array.isArray(article.tags) && article.tags.some(tag => tag.toLowerCase().includes(lowerSearchTerm)))
+            );
           }
 
           // Filter by tag if selected
@@ -245,13 +247,13 @@ export default function ArticlesPage() {
   return (
     <>
       <Navbar />
-      <div className="container py-8 px-4 min-h-[calc(100vh-8rem)] mx-auto max-w-5xl">
+      <div className="py-8 px-4 sm:px-8 min-h-[calc(100vh-8rem)] ">
 
         <div className="mb-8">
           <form onSubmit={handleSearch} className="flex gap-2 mb-4 max-w-xl">
             <Input
               type="text"
-              placeholder="Search by title or author..."
+              placeholder="Search by title, author, or tag..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="flex-1"
@@ -296,10 +298,10 @@ export default function ArticlesPage() {
                 {articles.map((article) => (
                   <Link href={`/articles/${article.id}`} key={article.id}>
                     <div className="py-4 px-2 rounded-md hover:bg-muted/50 transition-colors">
-                    <div className="flex flex-wrap gap-2 items-center justify-start text-left">
-                      <h2 className="text-base font-semibold">{article.title}</h2>
+                      <div className="flex flex-wrap gap-2 items-center justify-start text-left">
+                        <h2 className="text-base font-semibold">{article.title}</h2>
                         <span className="text-sm text-muted-foreground">by {article.authorName}</span>
-                    </div>
+                      </div>
                       <p className="text-sm text-muted-foreground">{article.excerpt}</p>
                       <div className="flex flex-wrap justify-start items-center gap-2">
                         {article.tags && article.tags.length > 0 && (

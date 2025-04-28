@@ -1,15 +1,14 @@
+import { Minimize } from "lucide-react"
 import { IssueDialog } from "./issue-dialog"
-import { ThemeToggle } from "./theme-toggle"
 
 export function Footer() {
   return (
     <footer className="border-t py-3 mt-2">
-      <div className="max-w-5xl mx-auto px-4 flex justify-between items-center">
+      <div className="  mx-auto px-4 flex justify-between items-center">
         <div className="flex items-center gap-4">
-          <ThemeToggle />
-          <span className="hidden md:block font-bold">MINI</span>
+         <Minimize className="h-4 w-4" />
         </div>
-          <span className="md:hidden block font-bold">MINI</span>
+          <span className="md:hidden block text-sm">Built for simplicity.</span>
         <div className="hidden md:block">
           <IssueDialog />
         </div>

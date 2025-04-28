@@ -5,209 +5,117 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
 import { Button } from "./ui/button"
-import { PenLine, User, Settings, LogOut, Loader2, Menu, Minimize } from "lucide-react"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { PenLine, User, Settings, LogOut, Loader2, Menu, Minimize, ChevronDown, BookOpen } from "lucide-react"
+import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { IssueDialog } from "./issue-dialog"
+import { ThemeToggle } from "./theme-toggle"
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from "./ui/dropdown-menu"
+import { ModeToggle } from "./mode-toggle"
 
 export function Navbar() {
   const { user, logout, loggingOut } = useAuth()
   const pathname = usePathname()
-  const [isOpen, setIsOpen] = useState(false)
+  const [isMobileOpen, setIsMobileOpen] = useState(false)
+  const [isDesktopOpen, setIsDesktopOpen] = useState(false)
 
   // Don't show navbar on landing page
   if (pathname === "/") return null
 
   return (
-    <nav className="border-b p-4">
-      <div className="max-w-5xl mx-auto flex justify-between items-center">
-        <div className="flex items-center gap-2">
-        <Minimize className="h-5 w-5" />
+    <nav className="border-b p-4 sticky top-0 z-40 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="mx-auto flex justify-between sm:justify-center items-center">
+        {/* Mobile: show logo only */}
+        <div className="flex  items-center gap-2 ">
+          <Minimize className="h-5 w-5" />
           <Link href="/articles" className="font-bold text-lg">
             MINI
           </Link>
         </div>
-
-        {/* Desktop Navigation */}
-        <div className="hidden md:flex items-center gap-4 text-sm">
-          {user ? (
-            <>
-              <Link
-                href="/articles"
-                className={`hover:text-blue-500 transition-colors ${pathname === "/articles" ? "text-blue-500" : ""}`}
-              >
-                Read
-              </Link>
-              <Link
-                href="/write"
-                className={`hover:text-blue-500 transition-colors ${pathname === "/write" ? "text-blue-500" : ""}`}
-              >
-                <Button variant="ghost" size="sm" className="gap-2">
-                  <PenLine className="h-4 w-4" />
-                  
-                </Button>
-              </Link>
-              <Link
-                href="/profile"
-                className={`hover:text-blue-500 transition-colors ${pathname === "/profile" ? "text-blue-500" : ""}`}
-              >
-                <Button variant="ghost" size="sm" className="gap-2">
-                  <User className="h-4 w-4" />
-                  
-                </Button>
-              </Link>
-              <Link
-                href="/settings"
-                className={`hover:text-blue-500 transition-colors ${pathname === "/settings" ? "text-blue-500" : ""}`}
-              >
-                <Button variant="ghost" size="sm" className="gap-2">
-                  <Settings className="h-4 w-4" />
-                  
-                </Button>
-              </Link>
-              <Button variant="ghost" size="sm" className="gap-2" onClick={() => logout()} disabled={loggingOut}>
-                {loggingOut ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Logging out...
-                  </>
-                ) : (
-                  <>
-                    <LogOut className="h-4 w-4" />
-                    
-                  </>
-                )}
-              </Button>
-            </>
-          ) : (
-            <>
-              <Link
-                href="/articles"
-                className={`hover:text-blue-500 transition-colors ${pathname === "/articles" ? "text-blue-500" : ""}`}
-              >
-                Read
-              </Link>
-              <Link
-                href="/login"
-                className={`hover:text-blue-500 transition-colors ${pathname === "/login" ? "text-blue-500" : ""}`}
-              >
-                Login
-              </Link>
-              <Link
-                href="/signup"
-                className={`hover:text-blue-500 transition-colors ${pathname === "/signup" ? "text-blue-500" : ""}`}
-              >
-                Signup
-              </Link>
-            </>
-          )}
-        </div>
-
         {/* Mobile Navigation */}
         <div className="md:hidden">
-          <Sheet open={isOpen} onOpenChange={setIsOpen}>
+          <Sheet open={isMobileOpen} onOpenChange={setIsMobileOpen}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <Menu className="h-5 w-5" />
-                <span className="sr-only">Toggle menu</span>
+              <Button variant="ghost" size="icon" className="md:hidden">
+                <Menu className="h-6 w-6" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-[250px] sm:w-[300px]">
-              <div className="flex flex-col gap-4 py-4">
-                {user ? (
-                  <>
-                    <Link
-                      href="/articles"
-                      className={`px-4 py-2 rounded-md hover:bg-muted ${pathname === "/articles" ? "bg-muted" : ""}`}
-                      onClick={() => setIsOpen(false)}
-                    >
-                      Read
-                    </Link>
-                    <Link
-                      href="/write"
-                      className={`px-4 py-2 rounded-md hover:bg-muted ${pathname === "/write" ? "bg-muted" : ""}`}
-                      onClick={() => setIsOpen(false)}
-                    >
-                      <span className="flex items-center gap-2">
-                        <PenLine className="h-4 w-4" />
-                        Write
-                      </span>
-                    </Link>
-                    <Link
-                      href="/profile"
-                      className={`px-4 py-2 rounded-md hover:bg-muted ${pathname === "/profile" ? "bg-muted" : ""}`}
-                      onClick={() => setIsOpen(false)}
-                    >
-                      <span className="flex items-center gap-2">
-                        <User className="h-4 w-4" />
-                        Profile
-                      </span>
-                    </Link>
-                    <Link
-                      href="/settings"
-                      className={`px-4 py-2 rounded-md hover:bg-muted ${pathname === "/settings" ? "bg-muted" : ""}`}
-                      onClick={() => setIsOpen(false)}
-                    >
-                      <span className="flex items-center gap-2">
-                        <Settings className="h-4 w-4" />
-                        Settings
-                      </span>
-                    </Link>
-                    <div className="px-4 py-2">
-                      <IssueDialog />
-                    </div>
+            <SheetContent side="left" className="p-0 w-64 flex flex-col justify-between">
+              <div className="flex flex-col gap-6 p-4">
+                <SheetTitle>
+                  <Link href="/articles" className="font-bold text-lg mb-4 flex items-center gap-2 px-2 py-2">
+                    MINI
+                  </Link>
+                </SheetTitle>
+                <Link href="/article" className="flex items-center gap-2 hover:bg-muted cursor-pointer rounded-lg px-2 py-2" onClick={() => setIsMobileOpen(false)}>
+                  <BookOpen className="w-4 h-4" /> Read
+                </Link>
+                <Link href="/write" className="flex items-center gap-2 hover:bg-muted cursor-pointer rounded-lg px-2 py-2" onClick={() => setIsMobileOpen(false)}>
+                  <PenLine className="w-4 h-4" /> Write
+                </Link>
+                {user && (
+                  <Link href="/profile" className="flex items-center gap-2 hover:bg-muted cursor-pointer rounded-lg px-2 py-2" onClick={() => setIsMobileOpen(false)}>
+                    <User className="w-4 h-4" /> Profile
+                  </Link>
+                )}
+                {user && (
+                  <Link href="/settings" className="flex items-center gap-2 hover:bg-muted cursor-pointer rounded-lg px-2 py-2" onClick={() => setIsMobileOpen(false)} >
+                    <Settings className="w-4 h-4" /> Settings
+                  </Link>
+                )}
+                <div className="flex items-center gap-2 hover:bg-muted cursor-pointer rounded-lg px-2">
+                  <ThemeToggle /> Switch
+                </div>
+                </div>
+                <div className="flex flex-col gap-6 p-4">
+                  <IssueDialog />
+                  {user ? (
                     <button
-                      className={`px-4 py-2 rounded-md hover:bg-muted text-left flex items-center gap-2 ${
-                        loggingOut ? "opacity-50 cursor-not-allowed" : ""
-                      }`}
+                      className={`px-4 py-2 rounded-md hover:bg-muted text-left flex items-center gap-2 ${loggingOut ? "opacity-50 cursor-not-allowed" : ""}`}
                       onClick={() => {
                         if (!loggingOut) {
-                          setIsOpen(false)
+                          setIsMobileOpen(false)
                           logout()
                         }
                       }}
                       disabled={loggingOut}
                     >
-                      {loggingOut ? (
-                        <>
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                          Logging out...
-                        </>
-                      ) : (
-                        <>
-                          <LogOut className="h-4 w-4" />
-                          Logout
-                        </>
-                      )}
+                      <LogOut className="w-4 h-4" />
+                      {loggingOut ? "Logging out..." : "Logout"}
                     </button>
-                  </>
-                ) : (
-                  <>
-                    <Link
-                      href="/articles"
-                      className={`px-4 py-2 rounded-md hover:bg-muted ${pathname === "/articles" ? "bg-muted" : ""}`}
-                      onClick={() => setIsOpen(false)}
-                    >
-                      Read
-                    </Link>
-                    <Link
-                      href="/login"
-                      className={`px-4 py-2 rounded-md hover:bg-muted ${pathname === "/login" ? "bg-muted" : ""}`}
-                      onClick={() => setIsOpen(false)}
-                    >
-                      Login
-                    </Link>
-                    <Link
-                      href="/signup"
-                      className={`px-4 py-2 rounded-md hover:bg-muted ${pathname === "/signup" ? "bg-muted" : ""}`}
-                      onClick={() => setIsOpen(false)}
-                    >
-                      Signup
-                    </Link>
-                    <div className="px-4 py-2">
-                      <IssueDialog />
-                    </div>
-                  </>
-                )}
+                  ) : (
+                    <>
+                      <Link
+                        href="/articles"
+                        className={`px-4 py-2 rounded-md hover:bg-muted ${pathname === "/articles" ? "bg-muted" : ""}`}
+                        onClick={() => setIsMobileOpen(false)}
+                      >
+                        Read
+                      </Link>
+                      <Link
+                        href="/login"
+                        className={`px-4 py-2 rounded-md hover:bg-muted ${pathname === "/login" ? "bg-muted" : ""}`}
+                        onClick={() => setIsMobileOpen(false)}
+                      >
+                        Login
+                      </Link>
+                      <Link
+                        href="/signup"
+                        className={`px-4 py-2 rounded-md hover:bg-muted ${pathname === "/signup" ? "bg-muted" : ""}`}
+                        onClick={() => setIsMobileOpen(false)}
+                      >
+                        Signup
+                      </Link>
+                      <div className="px-4 py-2">
+                        <IssueDialog />
+                      </div>
+                    </>
+                  )}
               </div>
             </SheetContent>
           </Sheet>

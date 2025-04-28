@@ -107,7 +107,7 @@ export default function ForgotPasswordPage() {
           </CardFooter>
         </Card>
       </div>
-      <Footer />
+       
     </>
   )
 }

@@ -30,15 +30,16 @@ export default function WritePage() {
     excerpt: "",
     body: "",
   })
-  const { user, userData } = useAuth()
-  const router = useRouter()
-  const { toast } = useToast()
+  const { user, userData, loading } = useAuth();
+  const router = useRouter();
+  const { toast } = useToast();
+
 
   useEffect(() => {
-    if (!user) {
-      router.push("/login")
+    if (!loading && !user) {
+      router.push("/login");
     }
-  }, [user, router])
+  }, [user, loading, router]);
 
   const handleAddTag = () => {
     if (tag.trim() && tags.length < 3 && !tags.includes(tag.trim())) {
@@ -149,7 +150,7 @@ export default function WritePage() {
   return (
     <>
       <Navbar />
-      <div className="container mx-auto py-8 px-4 max-w-3xl">
+      <div className="container mx-auto py-8 sm:px-8  ">
         <h1 className="text-2xl font-bold mb-8">Write an Article</h1>
 
         <div className="space-y-6">

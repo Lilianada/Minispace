@@ -29,7 +29,7 @@ export function ThemeToggle() {
       size="icon"
       aria-label={label}
       onClick={() => setTheme(nextTheme)}
-      className="transition-colors"
+      className="transition-colors block w-fit"
     >
       <Icon className="h-5 w-5" />
     </Button>

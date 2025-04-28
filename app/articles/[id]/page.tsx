@@ -7,6 +7,7 @@ import { db } from "@/lib/firebase"
 import { Navbar } from "@/components/navbar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Skeleton } from "@/components/ui/skeleton"
 import ReactMarkdown from "react-markdown"
 import Link from "next/link"
 import { Footer } from "@/components/footer"
@@ -69,12 +70,29 @@ export default function ArticlePage() {
     return (
       <>
         <Navbar />
-        <div className="container mx-auto py-8 px-4 min-h-[calc(100vh-8rem)]">
-          <div className="flex justify-center my-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-          </div>
+        <div className="container mx-auto py-8 px-4   min-h-[calc(100vh-8rem)]">
+          <Link href="/articles">
+            <Button variant="outline" className="mb-6">&larr; Back to Articles</Button>
+          </Link>
+          <article className="prose dark:prose-invert max-w-none">
+            <Skeleton className="h-10 w-3/4 mb-4" /> {/* Title */}
+            <div className="flex items-center justify-between mb-8">
+              <Skeleton className="h-4 w-1/3" /> {/* Author/Date */}
+              <div className="flex gap-2">
+                <Skeleton className="h-6 w-16 rounded-full" />
+                <Skeleton className="h-6 w-12 rounded-full" />
+              </div>
+            </div>
+            <div className="space-y-4 mt-8">
+              <Skeleton className="h-6 w-full" />
+              <Skeleton className="h-6 w-5/6" />
+              <Skeleton className="h-6 w-2/3" />
+              <Skeleton className="h-6 w-3/4" />
+              <Skeleton className="h-6 w-1/2" />
+            </div>
+          </article>
         </div>
-        <Footer />
+         
       </>
     )
   }
@@ -94,7 +112,7 @@ export default function ArticlePage() {
             </Link>
           </div>
         </div>
-        <Footer />
+         
       </>
     )
   }
@@ -108,11 +126,14 @@ export default function ArticlePage() {
   return (
     <>
       <Navbar />
-      <div className="container mx-auto py-8 px-4 max-w-3xl min-h-[calc(100vh-8rem)]">
+      <div className="container mx-auto py-8 px-8 min-h-[calc(100vh-8rem)]">
+        <Link href="/articles">
+          <Button variant="outline" className="mb-6">&larr; Back to Articles</Button>
+        </Link>
         <article className="prose dark:prose-invert max-w-none">
-          <h1 className="text-2xl font-bold mb-4">{article.title}</h1>
+          <h1 className="text-xl font-semibold mb-2">{article.title}</h1>
 
-          <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center flex-wrap gap-2 justify-between mb-8">
             <div className="text-sm text-muted-foreground">
               By {article.authorName} • {formattedDate}
             </div>
