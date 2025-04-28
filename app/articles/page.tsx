@@ -245,7 +245,7 @@ export default function ArticlesPage() {
   return (
     <>
       <Navbar />
-      <div className="container py-8 px-4 min-h-[calc(100vh-8rem)] max-w-3xl">
+      <div className="container py-8 px-4 min-h-[calc(100vh-8rem)] mx-auto max-w-5xl">
 
         <div className="mb-8">
           <form onSubmit={handleSearch} className="flex gap-2 mb-4 max-w-xl">

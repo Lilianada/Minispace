@@ -5,7 +5,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
 import { Button } from "./ui/button"
-import { PenLine, User, Settings, LogOut, Loader2, Menu } from "lucide-react"
+import { PenLine, User, Settings, LogOut, Loader2, Menu, Minimize } from "lucide-react"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { IssueDialog } from "./issue-dialog"
 
@@ -19,8 +19,9 @@ export function Navbar() {
 
   return (
     <nav className="border-b p-4">
-      <div className="container mx-auto flex justify-between items-center">
-        <div className="flex items-center gap-4">
+      <div className="max-w-5xl mx-auto flex justify-between items-center">
+        <div className="flex items-center gap-2">
+        <Minimize className="h-5 w-5" />
           <Link href="/articles" className="font-bold text-lg">
             MINI
           </Link>

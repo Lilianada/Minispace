@@ -104,7 +104,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const unsubscribe = onAuthStateChanged(
       auth,
       async (user) => {
-        console.log("Auth state changed:", user ? `User: ${user.email}` : "No user")
+     
         setUser(user)
 
         if (user && db) {
@@ -116,7 +116,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             if (userDoc.exists()) {
               const userData = userDoc.data() as UserData
               setUserData(userData)
-              console.log("User data loaded:", userData.username)
+              
 
               // Show welcome message based on time of day
               const hour = new Date().getHours()
@@ -178,10 +178,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
-      console.log("Signing up user:", email)
+     
       const userCredential = await createUserWithEmailAndPassword(auth, email, password)
       const user = userCredential.user
-      console.log("User created:", user.uid)
+      
 
       // Save user data to Firestore
       await setDoc(doc(db, "Users", user.uid), {
@@ -189,7 +189,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         email,
         createdAt: new Date(),
       })
-      console.log("User data saved to Firestore")
 
       return { success: true }
     } catch (error) {
@@ -230,9 +229,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
-      console.log("Logging in user:", email)
       await signInWithEmailAndPassword(auth, email, password)
-      console.log("Login successful")
       return { success: true }
     } catch (error) {
       console.error("Login error:", error)
@@ -274,7 +271,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       setLoggingOut(true)
       await signOut(auth)
-      console.log("User logged out")
 
       // Wait for 2 seconds before redirecting
       setTimeout(() => {

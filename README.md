@@ -20,7 +20,7 @@
 ---
 
 ## Overview
-**Mini** is a clean, lightweight web app where users can write, publish, and read articles without the distractions of traditional platforms.
+**MINI** is a clean, lightweight web app where users can write, publish, and read articles without the distractions of traditional platforms.
 
 ---
 
@@ -88,11 +88,10 @@ Feel free to fork, customize, and make it yours!
 ---
 
 ## Final Note
-Mini is intentionally small.  
+MINI is intentionally small.  
 No endless features. No follower counts. No distractions.  
 Just pure reading and writing. ✍🏽
 
 ---
 
-If you want, I can also help you quickly create a **Landing Page** or **GitHub repo description** that matches this branding! 🚀  
-Would you like that too? 🎨
+built by me, [Lily](https://github.com/lilianada)
