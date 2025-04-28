@@ -33,7 +33,7 @@ export function Navbar() {
         {/* Mobile: show logo only */}
         <div className="flex  items-center gap-2 ">
           <Minimize className="h-5 w-5" />
-          <Link href="/articles" className="font-bold text-lg">
+          <Link href="/" className="font-bold text-lg">
             MINI
           </Link>
         </div>
@@ -90,13 +90,7 @@ export function Navbar() {
                     </button>
                   ) : (
                     <>
-                      <Link
-                        href="/articles"
-                        className={`px-4 py-2 rounded-md hover:bg-muted ${pathname === "/articles" ? "bg-muted" : ""}`}
-                        onClick={() => setIsMobileOpen(false)}
-                      >
-                        Read
-                      </Link>
+                     
                       <Link
                         href="/login"
                         className={`px-4 py-2 rounded-md hover:bg-muted ${pathname === "/login" ? "bg-muted" : ""}`}
@@ -111,9 +105,6 @@ export function Navbar() {
                       >
                         Signup
                       </Link>
-                      <div className="px-4 py-2">
-                        <IssueDialog />
-                      </div>
                     </>
                   )}
               </div>

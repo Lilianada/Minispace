@@ -17,11 +17,8 @@ import * as firebase from "@/lib/firebase"
 import { Navbar } from "@/components/navbar"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Search } from "lucide-react"
-import Link from "next/link"
-import { Footer } from "@/components/footer"
 import { Skeleton } from "@/components/ui/skeleton"
+import Link from "next/link"
 
 interface Article {
   id: string
@@ -47,6 +44,15 @@ export default function ArticlesPage() {
   const [allTags, setAllTags] = useState<string[]>([])
   const [totalArticles, setTotalArticles] = useState(0)
   const [indexError, setIndexError] = useState<string | null>(null)
+
+  // Debounce search
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      fetchArticles(searchTerm, selectedTag, true)
+    }, 350)
+    return () => clearTimeout(handler)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchTerm, selectedTag])
 
   const fetchArticleCount = async () => {
     try {
@@ -250,7 +256,7 @@ export default function ArticlesPage() {
       <div className="py-8 px-4 sm:px-8 min-h-[calc(100vh-8rem)] ">
 
         <div className="mb-8">
-          <form onSubmit={handleSearch} className="flex gap-2 mb-4 max-w-xl">
+          <form className="flex gap-2 mb-4 max-w-xl" onSubmit={e => e.preventDefault()}>
             <Input
               type="text"
               placeholder="Search by title, author, or tag..."
@@ -258,10 +264,6 @@ export default function ArticlesPage() {
               onChange={(e) => setSearchTerm(e.target.value)}
               className="flex-1"
             />
-            <Button type="submit" size="icon">
-              <Search className="h-4 w-4" />
-              <span className="sr-only">Search</span>
-            </Button>
           </form>
         </div>
 
@@ -294,92 +296,90 @@ export default function ArticlesPage() {
                 </Link>
               </div>
             ) : (
-              <div className="space-y-6">
-                {articles.map((article) => (
-                  <Link href={`/articles/${article.id}`} key={article.id}>
-                    <div className="py-4 px-2 rounded-md hover:bg-muted/50 transition-colors">
-                      <div className="flex flex-wrap gap-2 items-center justify-start text-left">
-                        <h2 className="text-base font-semibold">{article.title}</h2>
-                        <span className="text-sm text-muted-foreground">by {article.authorName}</span>
+              <>
+                <div className="space-y-6 transition-all duration-500" style={{ opacity: loading ? 0.5 : 1 }}>
+                  {articles.map((article) => (
+                    <Link href={`/articles/${article.id}`} key={article.id}>
+                      <div className="py-4 px-2 rounded-md hover:bg-muted/50 transition-colors">
+                        <div className="flex flex-wrap gap-2 items-center justify-start text-left">
+                          <h2 className="text-base font-semibold">{article.title}</h2>
+                          <span className="text-sm text-muted-foreground">by {article.authorName}</span>
+                        </div>
+                        <p className="text-sm text-muted-foreground">{article.excerpt}</p>
+                        <div className="flex flex-wrap justify-start items-center gap-2">
+                          {article.tags && article.tags.length > 0 && (
+                            <div className="flex flex-wrap gap-2">
+                              {article.tags.map((tag) => (
+                                <p className="text-muted-foreground text-[10px]" key={tag}>#{tag}</p>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                       </div>
-                      <p className="text-sm text-muted-foreground">{article.excerpt}</p>
-                      <div className="flex flex-wrap justify-start items-center gap-2">
-                        {article.tags && article.tags.length > 0 && (
-                          <div className="flex flex-wrap gap-2">
-                            {article.tags.map((tag) => (
-                              // <Badge key={tag} variant="secondary" className="text-xs font-light text-muted-foreground">
-                              //   {tag}
-                              // </Badge>
-                              <p className="text-muted-foreground text-[10px]" key={tag}>#{tag}</p>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            )}
-
-            {/* Only show pagination if there are more than one page of articles */}
-            {showPagination && (
-              <div className="flex justify-center mt-8 overflow-x-auto">
-                <div className="flex items-center space-x-2">
-                  <Button variant="outline" onClick={handlePreviousPage} disabled={currentPage === 1}>
-                    Previous
-                  </Button>
-
-                  {startPage > 1 && (
-                    <>
-                      <Button
-                        variant={currentPage === 1 ? "default" : "outline"}
-                        onClick={() => handlePageClick(1)}
-                        className="w-10 h-10 p-0"
-                      >
-                        1
-                      </Button>
-                      {startPage > 2 && <span className="mx-1">...</span>}
-                    </>
-                  )}
-
-                  {Array.from({ length: endPage - startPage + 1 }, (_, i) => (
-                    <Button
-                      key={startPage + i}
-                      variant={currentPage === startPage + i ? "default" : "outline"}
-                      onClick={() => handlePageClick(startPage + i)}
-                      className="w-10 h-10 p-0"
-                    >
-                      {startPage + i}
-                    </Button>
+                    </Link>
                   ))}
-
-                  {endPage < totalPages && (
-                    <>
-                      {endPage < totalPages - 1 && <span className="mx-1">...</span>}
-                      <Button
-                        variant={currentPage === totalPages ? "default" : "outline"}
-                        onClick={() => handlePageClick(totalPages)}
-                        className="w-10 h-10 p-0"
-                      >
-                        {totalPages}
-                      </Button>
-                    </>
-                  )}
-
-                  <Button
-                    variant="outline"
-                    onClick={handleNextPage}
-                    disabled={currentPage >= totalPages || articles.length < ARTICLES_PER_PAGE}
-                  >
-                    Next
-                  </Button>
                 </div>
-              </div>
-            )}
+                {/* Only show pagination if there are more than one page of articles */}
+                {showPagination && (
+                  <div className="flex justify-center mt-8 overflow-x-auto">
+                    <div className="flex items-center space-x-2">
+                      <Button variant="outline" onClick={handlePreviousPage} disabled={currentPage === 1}>
+                        Previous
+                      </Button>
+
+                      {startPage > 1 && (
+                        <>
+                          <Button
+                            variant={currentPage === 1 ? "default" : "outline"}
+                            onClick={() => handlePageClick(1)}
+                            className="w-10 h-10 p-0"
+                          >
+                            1
+                          </Button>
+                          {startPage > 2 && <span className="mx-1">...</span>}
+                        </>
+                      )}
+
+                      {Array.from({ length: endPage - startPage + 1 }, (_, i) => (
+                        <Button
+                          key={startPage + i}
+                          variant={currentPage === startPage + i ? "default" : "outline"}
+                          onClick={() => handlePageClick(startPage + i)}
+                          className="w-10 h-10 p-0"
+                        >
+                          {startPage + i}
+                        </Button>
+                      ))}
+
+                      {endPage < totalPages && (
+                        <>
+                          {endPage < totalPages - 1 && <span className="mx-1">...</span>}
+                          <Button
+                            variant={currentPage === totalPages ? "default" : "outline"}
+                            onClick={() => handlePageClick(totalPages)}
+                            className="w-10 h-10 p-0"
+                          >
+                            {totalPages}
+                          </Button>
+                        </>
+                      )}
+
+                      <Button
+                        variant="outline"
+                        onClick={handleNextPage}
+                        disabled={currentPage >= totalPages || articles.length < ARTICLES_PER_PAGE}
+                      >
+                        Next
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </>
+            )
+          }
           </>
         )}
       </div>
-      <Footer />
-    </>
-  )
+      </>
+    )
 }
