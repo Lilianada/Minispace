@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { useToast } from "@/components/ui/use-toast"
 import { X } from "lucide-react"
+import { Footer } from "@/components/footer"
 
 interface Article {
   title: string
@@ -58,11 +59,7 @@ export default function EditArticlePage() {
 
           // Check if the current user is the author
           if (articleData.authorId !== user.uid) {
-            toast({
-              title: "Unauthorized",
-              description: "You don't have permission to edit this article",
-              variant: "destructive",
-            })
+            console.error("Unauthorized: You don't have permission to edit this article")
             router.push("/profile")
             return
           }
@@ -74,27 +71,18 @@ export default function EditArticlePage() {
           setTags(articleData.tags || [])
           setPublished(articleData.published)
         } else {
-          toast({
-            title: "Not Found",
-            description: "Article not found",
-            variant: "destructive",
-          })
+          console.log("Article not found")
           router.push("/profile")
         }
       } catch (error) {
         console.error("Error fetching article:", error)
-        toast({
-          title: "Error",
-          description: "Failed to load article",
-          variant: "destructive",
-        })
       } finally {
         setLoading(false)
       }
     }
 
     fetchArticle()
-  }, [id, user, router, toast])
+  }, [id, user, router])
 
   const handleAddTag = () => {
     if (tag.trim() && tags.length < 3 && !tags.includes(tag.trim())) {
@@ -145,25 +133,26 @@ export default function EditArticlePage() {
 
       router.push("/profile")
     } catch (error) {
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to update article",
-        variant: "destructive",
-      })
+      console.error("Error updating article:", error)
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  const handleCancel = () => {
+    router.push("/profile")
   }
 
   if (loading) {
     return (
       <>
         <Navbar />
-        <div className="container mx-auto py-8 px-4">
+        <div className="container mx-auto py-8 px-4 min-h-[calc(100vh-8rem)]">
           <div className="flex justify-center my-12">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
           </div>
         </div>
+        <Footer />
       </>
     )
   }
@@ -172,12 +161,13 @@ export default function EditArticlePage() {
     return (
       <>
         <Navbar />
-        <div className="container mx-auto py-8 px-4">
+        <div className="container mx-auto py-8 px-4 min-h-[calc(100vh-8rem)]">
           <div className="text-center py-12">
             <h1 className="text-2xl font-bold mb-4">Article not found</h1>
             <p className="text-muted-foreground">The article you're looking for doesn't exist or has been removed.</p>
           </div>
         </div>
+        <Footer />
       </>
     )
   }
@@ -185,7 +175,7 @@ export default function EditArticlePage() {
   return (
     <>
       <Navbar />
-      <div className="container mx-auto py-8 px-4 max-w-3xl">
+      <div className="container mx-auto py-8 px-4 max-w-3xl min-h-[calc(100vh-8rem)]">
         <h1 className="text-3xl font-bold mb-8">Edit Article</h1>
 
         <div className="space-y-6">
@@ -264,16 +254,20 @@ export default function EditArticlePage() {
             )}
           </div>
 
-          <div className="flex gap-4 pt-4">
+          <div className="flex flex-wrap gap-4 pt-4">
             <Button onClick={() => handleSubmit(true)} disabled={isSubmitting}>
               {isSubmitting ? "Publishing..." : "Publish"}
             </Button>
             <Button variant="outline" onClick={() => handleSubmit(false)} disabled={isSubmitting}>
               {isSubmitting ? "Saving..." : "Save as Draft"}
             </Button>
+            <Button variant="ghost" onClick={handleCancel} disabled={isSubmitting}>
+              Cancel
+            </Button>
           </div>
         </div>
       </div>
+      <Footer />
     </>
   )
 }

@@ -8,9 +8,10 @@ import { useAuth } from "@/lib/auth-context"
 import { Navbar } from "@/components/navbar"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Eye, EyeOff, Edit } from "lucide-react"
+import { Eye, EyeOff, Edit, Mail, UserIcon } from "lucide-react"
 import Link from "next/link"
-import { useToast } from "@/components/ui/use-toast"
+import { Footer } from "@/components/footer"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 interface Article {
   id: string
@@ -26,7 +27,6 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true)
   const { user, userData } = useAuth()
   const router = useRouter()
-  const { toast } = useToast()
 
   useEffect(() => {
     if (!user) {
@@ -38,9 +38,8 @@ export default function ProfilePage() {
       try {
         if (!db) throw new Error("Firestore is not initialized")
 
-        // Create the composite index if it doesn't exist
+        // First try to fetch articles with the index
         try {
-          // First try to fetch articles with the index
           const articlesQuery = query(
             collection(db, "Articles"),
             where("authorId", "==", user.uid),
@@ -60,24 +59,10 @@ export default function ProfilePage() {
 
           // If the error is about missing index
           if (indexError.code === "failed-precondition" && indexError.message.includes("requires an index")) {
-            // Show toast with link to create index
-            toast({
-              title: "Firestore Index Required",
-              description: (
-                <div>
-                  <p>This query requires a Firestore index. Please create it using the link below:</p>
-                  <a
-                    href={extractIndexUrl(indexError.message)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-500 underline mt-2 block"
-                  >
-                    Create Firestore Index
-                  </a>
-                </div>
-              ),
-              duration: 10000,
-            })
+            // Extract index URL for console logging
+            const urlMatch = indexError.message.match(/https:\/\/console\.firebase\.google\.com[^\s]+/)
+            const indexUrl = urlMatch ? urlMatch[0] : "https://console.firebase.google.com"
+            console.log("Create Firestore index at:", indexUrl)
 
             // Try to fetch without ordering as a fallback
             const fallbackQuery = query(collection(db, "Articles"), where("authorId", "==", user.uid))
@@ -105,35 +90,25 @@ export default function ProfilePage() {
         }
       } catch (error) {
         console.error("Error fetching articles:", error)
-        toast({
-          title: "Error",
-          description: "Failed to load your articles. Please try again later.",
-          variant: "destructive",
-          duration: 3000,
-        })
+        setArticles([])
       } finally {
         setLoading(false)
       }
     }
 
     fetchUserArticles()
-  }, [user, router, toast])
-
-  // Helper function to extract the index URL from the error message
-  const extractIndexUrl = (errorMessage: string) => {
-    const urlMatch = errorMessage.match(/https:\/\/console\.firebase\.google\.com[^\s]+/)
-    return urlMatch ? urlMatch[0] : "https://console.firebase.google.com"
-  }
+  }, [user, router])
 
   if (!user || loading) {
     return (
       <>
         <Navbar />
-        <div className="container mx-auto py-8 px-4">
+        <div className="container mx-auto py-8 px-4 min-h-[calc(100vh-8rem)]">
           <div className="flex justify-center my-12">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
           </div>
         </div>
+        <Footer />
       </>
     )
   }
@@ -141,8 +116,8 @@ export default function ProfilePage() {
   return (
     <>
       <Navbar />
-      <div className="container mx-auto py-8 px-4">
-        <div className="flex justify-between items-center mb-8">
+      <div className="container mx-auto py-8 px-4 min-h-[calc(100vh-8rem)]">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
           <h1 className="text-3xl font-bold">My Profile</h1>
           <Link href="/write">
             <Button>Write New Article</Button>
@@ -150,15 +125,33 @@ export default function ProfilePage() {
         </div>
 
         <div className="mb-8">
-          <h2 className="text-xl font-semibold mb-2">Profile Information</h2>
-          <div className="border p-4 rounded-lg">
-            <p>
-              <span className="font-medium">Username:</span> {userData?.username}
-            </p>
-            <p>
-              <span className="font-medium">Email:</span> {userData?.email}
-            </p>
-          </div>
+          <Card>
+            <CardHeader>
+              <CardTitle>Profile Information</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="bg-muted rounded-full p-2">
+                    <UserIcon className="h-5 w-5 text-muted-foreground" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Username</p>
+                    <p className="font-medium">{userData?.username}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="bg-muted rounded-full p-2">
+                    <Mail className="h-5 w-5 text-muted-foreground" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Email</p>
+                    <p className="font-medium">{userData?.email}</p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         <div>
@@ -174,9 +167,9 @@ export default function ProfilePage() {
           ) : (
             <div className="space-y-4">
               {articles.map((article) => (
-                <div key={article.id} className="border p-4 rounded-lg">
+                <div key={article.id} className="py-4 px-2 rounded-md hover:bg-muted/50 transition-colors">
                   <div className="flex justify-between items-start mb-2">
-                    <h3 className="text-lg font-medium">{article.title}</h3>
+                    <h3 className="text-base font-medium">{article.title}</h3>
                     <div className="flex items-center">
                       {article.published ? (
                         <Badge variant="outline" className="flex items-center gap-1">
@@ -192,10 +185,10 @@ export default function ProfilePage() {
                     </div>
                   </div>
 
-                  <p className="text-muted-foreground mb-4">{article.excerpt}</p>
+                  <p className="text-sm text-muted-foreground mb-2">{article.excerpt}</p>
 
                   <div className="flex justify-between items-center">
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
                       {article.tags &&
                         article.tags.map((tag) => (
                           <Badge key={tag} variant="secondary" className="text-xs">
@@ -217,6 +210,7 @@ export default function ProfilePage() {
           )}
         </div>
       </div>
+      <Footer />
     </>
   )
 }

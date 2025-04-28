@@ -10,10 +10,9 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { useToast } from "@/components/ui/use-toast"
 import { collection, query, where, getDocs } from "firebase/firestore"
 import { db } from "@/lib/firebase"
-import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Footer } from "@/components/footer"
 
 export default function SignupPage() {
   const [username, setUsername] = useState("")
@@ -24,14 +23,14 @@ export default function SignupPage() {
     username: "",
     email: "",
     password: "",
+    general: "",
   })
   const { signup, checkEmailExists, isFirebaseInitialized } = useAuth()
   const router = useRouter()
-  const { toast } = useToast()
 
   const validateForm = async () => {
     let isValid = true
-    const newErrors = { username: "", email: "", password: "" }
+    const newErrors = { username: "", email: "", password: "", general: "" }
 
     // Validate username
     if (!username) {
@@ -93,11 +92,10 @@ export default function SignupPage() {
     e.preventDefault()
 
     if (!isFirebaseInitialized) {
-      toast({
-        title: "Firebase Not Ready",
-        description: "Firebase is still initializing. Please try again in a moment.",
-        variant: "destructive",
-        duration: 5000,
+      console.error("Firebase is not initialized")
+      setErrors({
+        ...errors,
+        general: "System is initializing. Please try again in a moment.",
       })
       return
     }
@@ -115,26 +113,19 @@ export default function SignupPage() {
       const result = await signup(email, password, username)
 
       if (result.success) {
-        toast({
-          title: "Account Created",
-          description: "Your account has been created successfully!",
-          duration: 5000,
-        })
         router.push("/articles")
       } else {
-        toast({
-          title: "Signup Failed",
-          description: result.error,
-          variant: "destructive",
-          duration: 5000,
+        console.error("Signup failed:", result.error)
+        setErrors({
+          ...errors,
+          general: result.error || "Failed to create account. Please try again.",
         })
       }
     } catch (error) {
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to create account",
-        variant: "destructive",
-        duration: 5000,
+      console.error("Signup error:", error)
+      setErrors({
+        ...errors,
+        general: "An unexpected error occurred. Please try again.",
       })
     } finally {
       setIsLoading(false)
@@ -142,72 +133,79 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="flex justify-center items-center min-h-screen p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle className="text-2xl text-center">Sign Up</CardTitle>
-          <CardDescription className="text-center">Create your MINI account</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {!isFirebaseInitialized && (
-            <Alert className="mb-4">
-              <AlertDescription>
-                Firebase is initializing. If this message persists, please check your Firebase configuration.
-              </AlertDescription>
-            </Alert>
-          )}
+    <>
+      <div className="flex justify-center items-center min-h-[calc(100vh-4rem)] p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle className="text-2xl text-center">Sign Up</CardTitle>
+            <CardDescription className="text-center">Create your MINI account</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {!isFirebaseInitialized && (
+              <div className="mb-4 p-4 border rounded-md bg-amber-50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-200">
+                System is initializing. Please wait a moment.
+              </div>
+            )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="username">Username</Label>
-              <Input
-                id="username"
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="Enter your username"
-                disabled={isLoading || !isFirebaseInitialized}
-              />
-              {errors.username && <p className="text-sm text-red-500">{errors.username}</p>}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Enter your email"
-                disabled={isLoading || !isFirebaseInitialized}
-              />
-              {errors.email && <p className="text-sm text-red-500">{errors.email}</p>}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Create a password (min. 6 characters)"
-                disabled={isLoading || !isFirebaseInitialized}
-              />
-              {errors.password && <p className="text-sm text-red-500">{errors.password}</p>}
-            </div>
-            <Button type="submit" className="w-full" disabled={isLoading || !isFirebaseInitialized}>
-              {isLoading ? "Creating account..." : "Sign Up"}
-            </Button>
-          </form>
-        </CardContent>
-        <CardFooter className="flex justify-center">
-          <p className="text-sm text-muted-foreground">
-            Already have an account?{" "}
-            <Link href="/login" className="text-blue-500 hover:underline">
-              Log in
-            </Link>
-          </p>
-        </CardFooter>
-      </Card>
-    </div>
+            {errors.general && (
+              <div className="mb-4 p-4 border rounded-md bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-200">
+                {errors.general}
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="username">Username</Label>
+                <Input
+                  id="username"
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="Enter your username"
+                  disabled={isLoading || !isFirebaseInitialized}
+                />
+                {errors.username && <p className="text-sm text-red-500">{errors.username}</p>}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Enter your email"
+                  disabled={isLoading || !isFirebaseInitialized}
+                />
+                {errors.email && <p className="text-sm text-red-500">{errors.email}</p>}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Create a password (min. 6 characters)"
+                  disabled={isLoading || !isFirebaseInitialized}
+                />
+                {errors.password && <p className="text-sm text-red-500">{errors.password}</p>}
+              </div>
+              <Button type="submit" className="w-full" disabled={isLoading || !isFirebaseInitialized}>
+                {isLoading ? "Creating account..." : "Sign Up"}
+              </Button>
+            </form>
+          </CardContent>
+          <CardFooter className="flex justify-center">
+            <p className="text-sm text-muted-foreground">
+              Already have an account?{" "}
+              <Link href="/login" className="text-blue-500 hover:underline">
+                Log in
+              </Link>
+            </p>
+          </CardFooter>
+        </Card>
+      </div>
+      <Footer />
+    </>
   )
 }

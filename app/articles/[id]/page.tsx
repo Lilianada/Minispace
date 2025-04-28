@@ -7,9 +7,9 @@ import { db } from "@/lib/firebase"
 import { Navbar } from "@/components/navbar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { useToast } from "@/components/ui/use-toast"
 import ReactMarkdown from "react-markdown"
 import Link from "next/link"
+import { Footer } from "@/components/footer"
 
 interface Article {
   title: string
@@ -26,7 +26,6 @@ export default function ArticlePage() {
   const [article, setArticle] = useState<Article | null>(null)
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
-  const { toast } = useToast()
 
   useEffect(() => {
     const fetchArticle = async () => {
@@ -57,40 +56,25 @@ export default function ArticlePage() {
         }
       } catch (error) {
         console.error("Error fetching article:", error)
-
-        // This is an actual error (not just article not found)
-        let errorMessage = "Failed to load article. Please try again later."
-
-        if (error instanceof Error) {
-          if (error.message.includes("database") && error.message.includes("does not exist")) {
-            errorMessage =
-              "Firestore database has not been set up yet. Please create a Firestore database in your Firebase console."
-          }
-        }
-
-        toast({
-          title: "Error",
-          description: errorMessage,
-          variant: "destructive",
-          duration: 3000,
-        })
+        setNotFound(true)
       } finally {
         setLoading(false)
       }
     }
 
     fetchArticle()
-  }, [id, toast])
+  }, [id])
 
   if (loading) {
     return (
       <>
         <Navbar />
-        <div className="container mx-auto py-8 px-4">
+        <div className="container mx-auto py-8 px-4 min-h-[calc(100vh-8rem)]">
           <div className="flex justify-center my-12">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
           </div>
         </div>
+        <Footer />
       </>
     )
   }
@@ -99,7 +83,7 @@ export default function ArticlePage() {
     return (
       <>
         <Navbar />
-        <div className="container mx-auto py-8 px-4">
+        <div className="container mx-auto py-8 px-4 min-h-[calc(100vh-8rem)]">
           <div className="text-center py-12">
             <h1 className="text-2xl font-bold mb-4">Article not found</h1>
             <p className="text-muted-foreground">The article you're looking for doesn't exist or has been removed.</p>
@@ -110,6 +94,7 @@ export default function ArticlePage() {
             </Link>
           </div>
         </div>
+        <Footer />
       </>
     )
   }
@@ -123,7 +108,7 @@ export default function ArticlePage() {
   return (
     <>
       <Navbar />
-      <div className="container mx-auto py-8 px-4 max-w-3xl">
+      <div className="container mx-auto py-8 px-4 max-w-3xl min-h-[calc(100vh-8rem)]">
         <article className="prose dark:prose-invert max-w-none">
           <h1 className="text-3xl font-bold mb-4">{article.title}</h1>
 
@@ -148,6 +133,7 @@ export default function ArticlePage() {
           </div>
         </article>
       </div>
+      <Footer />
     </>
   )
 }

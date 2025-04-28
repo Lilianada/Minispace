@@ -4,9 +4,7 @@ import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "@/components/ui/toaster"
 import { AuthProvider } from "@/lib/auth-context"
-import { FirebaseDebug } from "@/components/firebase-debug"
 import { FirebaseInitializer } from "@/components/firebase-initializer"
-import { FirebaseSetupGuide } from "@/components/firebase-setup-guide"
 
 export const metadata = {
   title: "MINI - Read and Write without the noise",
@@ -21,11 +19,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${GeistSans.className} antialiased min-h-screen bg-background text-foreground`}>
+      <body className={`${GeistSans.className} antialiased min-h-screen bg-background text-foreground flex flex-col`}>
         <FirebaseInitializer />
         <AuthProvider>
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-            {children}
+            <div className="flex-1 flex flex-col">{children}</div>
             <Toaster />
           </ThemeProvider>
         </AuthProvider>

@@ -69,12 +69,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (!isInitialized) {
         console.error("Firebase auth or Firestore is not initialized")
-        toast({
-          title: "Configuration Error",
-          description: "Firebase is not properly configured. Please check your environment variables.",
-          variant: "destructive",
-          duration: 5000,
-        })
       }
 
       return isInitialized
@@ -93,7 +87,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       return () => clearInterval(interval)
     }
-  }, [toast])
+  }, [])
 
   // Set up auth state listener
   useEffect(() => {
@@ -147,12 +141,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             }
           } catch (error) {
             console.error("Error fetching user data:", error)
-            toast({
-              title: "Error",
-              description: "Failed to load your profile data. Please try logging in again.",
-              variant: "destructive",
-              duration: 5000,
-            })
           }
         } else {
           setUserData(null)

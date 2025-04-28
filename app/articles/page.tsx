@@ -22,7 +22,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Search } from "lucide-react"
 import Link from "next/link"
-import { useToast } from "@/components/ui/use-toast"
+import { Footer } from "@/components/footer"
 
 interface Article {
   id: string
@@ -47,7 +47,6 @@ export default function ArticlesPage() {
   const [allTags, setAllTags] = useState<string[]>([])
   const [totalArticles, setTotalArticles] = useState(0)
   const [indexError, setIndexError] = useState<string | null>(null)
-  const { toast } = useToast()
 
   const fetchArticleCount = async () => {
     try {
@@ -60,7 +59,6 @@ export default function ArticlesPage() {
       setTotalPages(Math.ceil(count / ARTICLES_PER_PAGE))
     } catch (error) {
       console.error("Error fetching article count:", error)
-      // Don't show toast here as we'll handle it in fetchArticles
     }
   }
 
@@ -154,25 +152,7 @@ export default function ArticlesPage() {
           // If the error is about missing index
           if (indexErr.code === "failed-precondition" && indexErr.message.includes("requires an index")) {
             setIndexError(indexErr.message)
-
-            // Show toast with link to create index
-            toast({
-              title: "Firestore Index Required",
-              description: (
-                <div>
-                  <p>This query requires a Firestore index. Please create it using the link below:</p>
-                  <a
-                    href={extractIndexUrl(indexErr.message)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-500 underline mt-2 block"
-                  >
-                    Create Firestore Index
-                  </a>
-                </div>
-              ),
-              duration: 10000,
-            })
+            console.log("Create Firestore index at:", extractIndexUrl(indexErr.message))
 
             // Try to fetch without ordering as a fallback
             const fallbackQuery = query(
@@ -214,30 +194,12 @@ export default function ArticlesPage() {
         }
       } catch (error) {
         console.error("Error fetching articles:", error)
-
-        // Only show toast for actual errors, not for "no articles found"
-        if (error instanceof Error) {
-          let errorMessage = "Failed to load articles. Please try again later."
-
-          if (error.message.includes("database") && error.message.includes("does not exist")) {
-            errorMessage =
-              "Firestore database has not been set up yet. Please create a Firestore database in your Firebase console."
-          }
-
-          toast({
-            title: "Error",
-            description: errorMessage,
-            variant: "destructive",
-            duration: 3000,
-          })
-        }
-
         setArticles([])
       } finally {
         setLoading(false)
       }
     },
-    [db, lastVisible, toast],
+    [db, lastVisible],
   )
 
   useEffect(() => {
@@ -291,7 +253,7 @@ export default function ArticlesPage() {
   return (
     <>
       <Navbar />
-      <div className="container mx-auto py-8 px-4">
+      <div className="container mx-auto py-8 px-4 min-h-[calc(100vh-8rem)]">
         <h1 className="text-3xl font-bold mb-8">Articles</h1>
 
         <div className="mb-8">
@@ -301,7 +263,7 @@ export default function ArticlesPage() {
               placeholder="Search by title or author..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="max-w-md"
+              className="flex-1"
             />
             <Button type="submit" size="icon">
               <Search className="h-4 w-4" />
@@ -325,22 +287,6 @@ export default function ArticlesPage() {
           )}
         </div>
 
-        {indexError && (
-          <div className="mb-4 p-4 border border-amber-200 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-800 rounded-md">
-            <p className="text-amber-800 dark:text-amber-200 mb-2">
-              This query requires a Firestore index. Results below may be incomplete.
-            </p>
-            <a
-              href={extractIndexUrl(indexError)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-500 underline"
-            >
-              Create Firestore Index
-            </a>
-          </div>
-        )}
-
         {loading ? (
           <div className="flex justify-center my-12">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
@@ -360,15 +306,13 @@ export default function ArticlesPage() {
               <div className="space-y-6">
                 {articles.map((article) => (
                   <Link href={`/articles/${article.id}`} key={article.id}>
-                    <div className="border p-6 rounded-lg hover:border-blue-500 transition-colors group">
-                      <h2 className="text-xl font-semibold mb-2 group-hover:text-blue-500 transition-colors">
-                        {article.title}
-                      </h2>
-                      <p className="text-muted-foreground mb-4">{article.excerpt}</p>
-                      <div className="flex justify-between items-center">
+                    <div className="py-4 px-2 rounded-md hover:bg-muted/50 transition-colors">
+                      <h2 className="text-base font-semibold mb-1">{article.title}</h2>
+                      <p className="text-sm text-muted-foreground mb-2">{article.excerpt}</p>
+                      <div className="flex flex-wrap justify-between items-center gap-2">
                         <span className="text-sm">{article.authorName}</span>
                         {article.tags && article.tags.length > 0 && (
-                          <div className="flex gap-2">
+                          <div className="flex flex-wrap gap-2">
                             {article.tags.map((tag) => (
                               <Badge key={tag} variant="secondary" className="text-xs">
                                 {tag}
@@ -385,7 +329,7 @@ export default function ArticlesPage() {
 
             {/* Only show pagination if there are more than one page of articles */}
             {showPagination && (
-              <div className="flex justify-center mt-8">
+              <div className="flex justify-center mt-8 overflow-x-auto">
                 <div className="flex items-center space-x-2">
                   <Button variant="outline" onClick={handlePreviousPage} disabled={currentPage === 1}>
                     Previous
@@ -441,6 +385,7 @@ export default function ArticlesPage() {
           </>
         )}
       </div>
+      <Footer />
     </>
   )
 }
