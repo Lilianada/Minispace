@@ -8,7 +8,7 @@ import { useEffect, useState } from "react"
 import { Minimize } from "lucide-react"
 
 export default function Home() {
-  const phrases = ["Read and Write without all the noise", "The true definition of minimalism"]
+  const phrases = ["Read and Write without all the noise", "The true definition of minimalism", "Like Medium, but lighter, faster, and distraction-free"]
 
   return (
     <div className="flex flex-col h-screen">
