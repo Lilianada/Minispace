@@ -1,0 +1,28 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Allow users to read published articles
+    match /Articles/{articleId} {
+      allow read: if resource.data.published == true;
+      
+      // Allow users to read their own drafts
+      allow read: if request.auth != null && resource.data.authorId == request.auth.uid;
+      
+      // Allow users to create and update their own articles
+      allow create: if request.auth != null && request.resource.data.authorId == request.auth.uid;
+      allow update: if request.auth != null && resource.data.authorId == request.auth.uid;
+      
+      // Allow users to delete their own articles
+      allow delete: if request.auth != null && resource.data.authorId == request.auth.uid;
+    }
+    
+    // Allow users to read and write their own user data
+    match /Users/{userId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if request.auth != null && request.auth.uid == userId;
+      
+      // Allow reading username for display purposes
+      allow read: if request.auth != null && resource.data.username != null;
+    }
+  }
+}

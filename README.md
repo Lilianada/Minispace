@@ -1,30 +1,68 @@
-# Mini-App
+# MINI - Minimalist Reading and Writing Platform
 
-*Automatically synced with your [v0.dev](https://v0.dev) deployments*
+A minimalist platform for reading and writing without all the extra noise.
 
-[![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://vercel.com/lilianadas-projects/v0-mini-app)
-[![Built with v0](https://img.shields.io/badge/Built%20with-v0.dev-black?style=for-the-badge)](https://v0.dev/chat/projects/2KtFvEyiN58)
+## Features
 
-## Overview
+- Dark/light theme toggle
+- User authentication (signup, login, forgot password)
+- Article reading with markdown support
+- Article writing and editing
+- User profile and settings management
+- Tag-based filtering and search
 
-This repository will stay in sync with your deployed chats on [v0.dev](https://v0.dev).
-Any changes you make to your deployed app will be automatically pushed to this repository from [v0.dev](https://v0.dev).
+## Setup Instructions
 
-## Deployment
+### Prerequisites
 
-Your project is live at:
+- Node.js 16.8.0 or later
+- Firebase account
 
-**[https://vercel.com/lilianadas-projects/v0-mini-app](https://vercel.com/lilianadas-projects/v0-mini-app)**
+### Environment Variables
 
-## Build your app
+Create a `.env.local` file in the root directory with the following variables:
 
-Continue building your app on:
+\`\`\`
+NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key_here
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_auth_domain_here
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id_here
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_storage_bucket_here
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_messaging_sender_id_here
+NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id_here
+\`\`\`
 
-**[https://v0.dev/chat/projects/2KtFvEyiN58](https://v0.dev/chat/projects/2KtFvEyiN58)**
+### Firebase Setup
 
-## How It Works
+1. Create a new Firebase project at [https://console.firebase.google.com/](https://console.firebase.google.com/)
+2. Enable Authentication with Email/Password provider
+3. Create a Firestore database with the following collections:
+   - `Users` - For storing user information
+   - `Articles` - For storing article data
 
-1. Create and modify your project using [v0.dev](https://v0.dev)
-2. Deploy your chats from the v0 interface
-3. Changes are automatically pushed to this repository
-4. Vercel deploys the latest version from this repository
+### Installation
+
+1. Clone the repository
+2. Install dependencies:
+   \`\`\`bash
+   npm install
+   \`\`\`
+3. Run the development server:
+   \`\`\`bash
+   npm run dev
+   \`\`\`
+4. Open [http://localhost:3000](http://localhost:3000) in your browser
+
+## Project Structure
+
+- `/app` - Next.js app router pages
+- `/components` - Reusable React components
+- `/lib` - Utility functions and Firebase setup
+- `/public` - Static assets
+
+## Technologies Used
+
+- Next.js
+- React
+- Tailwind CSS
+- Firebase (Authentication & Firestore)
+- shadcn/ui components
