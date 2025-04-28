@@ -773,12 +773,11 @@ export function SidebarLogoutButton() {
   return (
     <Button
       variant="ghost"
-      className="w-full flex items-center justify-start gap-2 text-red-600 mt-4 mb-2"
+      className="w-full flex items-center"
       onClick={logout}
       disabled={loggingOut}
     >
       <LogOut className="w-4 h-4" />
-      {loggingOut ? "Logging out..." : "Log out"}
     </Button>
   )
 }
