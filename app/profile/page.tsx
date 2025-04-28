@@ -160,7 +160,7 @@ export default function ProfilePage() {
       <Navbar />
       <div className="container mx-auto py-8 px-4 min-h-[calc(100vh-8rem)]">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-          <h1 className="text-3xl font-bold">My Profile</h1>
+          <h1 className="text-2xl font-bold">My Profile</h1>
           <Link href="/write">
             <Button>Write New Article</Button>
           </Link>
@@ -197,7 +197,7 @@ export default function ProfilePage() {
         </div>
 
         <div>
-          <h2 className="text-xl font-semibold mb-4">My Articles</h2>
+          <h2 className="text-2xl font-semibold mb-4 px-2">My Articles</h2>
 
           {articles.length === 0 ? (
             <div className="text-center py-12 border rounded-lg">

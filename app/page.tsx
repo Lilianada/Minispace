@@ -33,7 +33,7 @@ export default function Home() {
       {/* Main Content */}
       <main className="flex-1 flex flex-col items-center justify-center">
         <Minimize className="h-5 w-5" />
-        <h1 className="text-3xl font-semibold ">MINI</h1>
+        <h1 className="text-2xl font-semibold ">MINI</h1>
         <div className="">
           <TypewriterEffect phrases={phrases} />
         </div>

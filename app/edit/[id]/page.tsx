@@ -176,7 +176,7 @@ export default function EditArticlePage() {
     <>
       <Navbar />
       <div className="container mx-auto py-8 px-4 max-w-3xl min-h-[calc(100vh-8rem)]">
-        <h1 className="text-3xl font-bold mb-8">Edit Article</h1>
+        <h1 className="text-2xl font-bold mb-8">Edit Article</h1>
 
         <div className="space-y-6">
           <div className="space-y-2">

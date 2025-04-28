@@ -94,7 +94,7 @@
 }
 
 .prose h1 {
-  @apply text-3xl font-bold mt-8 mb-4;
+  @apply text-2xl font-bold mt-8 mb-4;
 }
 
 .prose h2 {
@@ -102,7 +102,7 @@
 }
 
 .prose h3 {
-  @apply text-xl font-bold mt-4 mb-2;
+  @apply text-2xl font-bold mt-4 mb-2;
 }
 
 .prose p {
