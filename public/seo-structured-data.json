@@ -2,19 +2,19 @@
   "@context": "https://schema.org",
   "@type": "WebSite",
   "name": "MINI – Minimalist Reading & Writing Platform",
-  "url": "https://mini.lilianada.com/",
+  "url": "https://mini.lilyslab.xyz/",
   "description": "A minimalist platform for reading and writing. Publish, read, and discover articles without the noise.",
-  "image": "https://mini.lilianada.com/logo.png",
+  "image": "https://mini.lilyslab.xyz/logo.png",
   "publisher": {
     "@type": "Organization",
     "name": "Lily's Lab",
     "logo": {
       "@type": "ImageObject",
-      "url": "https://mini.lilianada.com/logo.png"
+      "url": "https://mini.lilyslab.xyz/logo.png"
     }
   },
   "sameAs": [
-    "https://twitter.com/lilianada",
+    "https://twitter.com/lilian_ada_",
     "https://github.com/Lilianada"
   ]
 }
