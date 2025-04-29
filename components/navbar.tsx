@@ -29,7 +29,7 @@ export function Navbar() {
 
   return (
     <nav className="border-b p-4 sticky top-0 z-40 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="mx-auto flex justify-between sm:justify-center items-center">
+      <div className="mx-auto flex justify-between md:justify-center items-center">
         {/* Mobile: show logo only */}
         <div className="flex  items-center gap-2 ">
           <Minimize className="h-5 w-5" />

@@ -4,7 +4,7 @@ import type React from "react"
 
 import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore"
+import { doc, getDoc, updateDoc, serverTimestamp, deleteDoc } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 import { useAuth } from "@/lib/auth-context"
 import { Navbar } from "@/components/navbar"
@@ -27,6 +27,8 @@ interface Article {
 }
 
 export default function EditArticlePage() {
+  const [showConfirm, setShowConfirm] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
   const { id } = useParams()
   const [article, setArticle] = useState<Article | null>(null)
   const [title, setTitle] = useState("")
@@ -143,6 +145,38 @@ export default function EditArticlePage() {
     router.push("/profile")
   }
 
+  // Delete handler
+  const handleDeleteArticle = () => {
+    setShowConfirm(true)
+  }
+
+  const confirmDelete = async () => {
+    if (!id || typeof id !== "string") return
+    setIsDeleting(true)
+    try {
+      await deleteDoc(doc(db, "Articles", id))
+      toast({
+        title: "Deleted",
+        description: "Article deleted successfully.",
+        variant: "destructive",
+      })
+      router.push("/profile")
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete article.",
+        variant: "destructive",
+      })
+      setShowConfirm(false)
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
+  const cancelDelete = () => {
+    setShowConfirm(false)
+  }
+
   if (loading) {
     return (
       <>
@@ -163,7 +197,7 @@ export default function EditArticlePage() {
         <Navbar />
         <div className="container  mx-auto py-8 px-4 min-h-[calc(100vh-8rem)]">
           <div className="text-center py-12">
-            <h1 className="text-2xl font-bold mb-4">Article not found</h1>
+            <h1 className=""text-xl font-bold mb-4">Article not found</h1>
             <p className="text-muted-foreground">The article you're looking for doesn't exist or has been removed.</p>
           </div>
         </div>
@@ -176,7 +210,7 @@ export default function EditArticlePage() {
     <>
       <Navbar />
       <div className="container mx-auto py-8 px-8   min-h-[calc(100vh-8rem)]">
-        <h1 className="text-2xl font-bold mb-8">Edit Article</h1>
+        <h1 className=text-xl font-bold mb-8">Edit Article</h1>
 
         <div className="space-y-6">
           <div className="space-y-2">
@@ -265,6 +299,29 @@ export default function EditArticlePage() {
               Cancel
             </Button>
           </div>
+
+          {/* Delete Button */}
+          <div className="flex justify-end mt-4">
+            <Button variant="destructive" onClick={handleDeleteArticle} disabled={isDeleting}>
+              {isDeleting ? "Deleting..." : "Delete Article"}
+            </Button>
+          </div>
+
+          {/* Confirm Delete Dialog */}
+          {showConfirm && (
+            <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center">
+              <div className="bg-white dark:bg-zinc-900 rounded-lg shadow-lg p-6 max-w-sm w-full">
+                <h2 className="text-lg font-semibold mb-4">Delete Article</h2>
+                <p className="mb-4">Are you sure you want to delete <span className="font-bold">{title}</span>? This action cannot be undone.</p>
+                <div className="flex justify-end gap-2">
+                  <Button variant="outline" onClick={cancelDelete} disabled={isDeleting}>Cancel</Button>
+                  <Button variant="destructive" onClick={confirmDelete} disabled={isDeleting}>
+                    {isDeleting ? "Deleting..." : "Delete"}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
        

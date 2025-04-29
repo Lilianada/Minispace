@@ -210,7 +210,7 @@ export default function SettingsPage() {
     <>
       <Navbar />
       <div className="mx-auto py-8 px-4 sm:px-8">
-        <h1 className="text-2xl font-bold mb-8">Settings</h1>
+        <h1 className="text-xl font-bold mb-8">Settings</h1>
 
         <div className="space-y-8">
           <Card>
