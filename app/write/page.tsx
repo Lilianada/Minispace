@@ -14,7 +14,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { useToast } from "@/components/ui/use-toast"
-import { X } from "lucide-react"
+import { X, ArrowLeft } from "lucide-react"
 
 const MAX_EXCERPT_LENGTH = 150
 
@@ -150,8 +150,18 @@ export default function WritePage() {
   return (
     <>
       <Navbar />
-      <div className="container mx-auto py-8 sm:px-8  ">
-        <h1 className="text-xl font-bold mb-8">Write an Article</h1>
+      <div className="container mx-auto py-8 sm:px-8">
+        <div className="flex items-center gap-4 mb-8">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={() => router.back()}
+            aria-label="Go back"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <h1 className="text-xl font-bold">Write an Article</h1>
+        </div>
 
         <div className="space-y-6">
           <div className="space-y-2">

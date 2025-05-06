@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { doc, updateDoc } from "firebase/firestore"
+import { doc, updateDoc, collection, query, where, getDocs } from "firebase/firestore"
 import { updateEmail, updatePassword, reauthenticateWithCredential, EmailAuthProvider, deleteUser } from "firebase/auth"
 import { db } from "@/lib/firebase"
 import { useAuth } from "@/lib/auth-context"
@@ -63,12 +63,49 @@ export default function SettingsPage() {
 
     try {
       setIsSubmitting(true)
+      
+      // Check if username has changed
+      const usernameChanged = username !== userData?.username
 
       // Update Firestore document
       await updateDoc(doc(db, "Users", user.uid), {
         username,
         email,
       })
+
+      // Update username in all past articles if it changed
+      if (usernameChanged) {
+        try {
+          // Query all articles by this author
+          const articlesQuery = query(
+            collection(db, "Articles"),
+            where("authorId", "==", user.uid)
+          )
+          
+          const articlesSnapshot = await getDocs(articlesQuery)
+          
+          // Update each article with the new username
+          const updatePromises = articlesSnapshot.docs.map(articleDoc => {
+            return updateDoc(doc(db, "Articles", articleDoc.id), {
+              authorName: username
+            })
+          })
+          
+          await Promise.all(updatePromises)
+          
+          toast({
+            title: "Username Updated",
+            description: `Username updated in ${articlesSnapshot.size} article${articlesSnapshot.size !== 1 ? 's' : ''}.`,
+          })
+        } catch (articlesError) {
+          console.error("Error updating articles:", articlesError)
+          toast({
+            title: "Warning",
+            description: "Profile updated but there was an issue updating your username in past articles.",
+            variant: "destructive",
+          })
+        }
+      }
 
       // Update email in Firebase Auth if it changed
       if (email !== userData?.email) {

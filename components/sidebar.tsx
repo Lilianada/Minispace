@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { Minimize, BookOpen, PenLine, User, Settings, LogOut } from "lucide-react"
+import { Minimize, BookOpen, PenLine, User, Settings, LogOut, AlertCircle } from "lucide-react"
 import { ModeToggle } from "./mode-toggle"
 import { SidebarTooltip } from "./sidebar-tooltip"
 import { SidebarLogoutButton } from "./ui/sidebar"
@@ -29,6 +29,11 @@ export default function Sidebar() {
       <SidebarTooltip label="Settings">
         <Link href="/settings" className="flex items-center justify-center w-10 h-10 rounded hover:bg-muted">
           <Settings className="w-4 h-4" />
+        </Link>
+      </SidebarTooltip>
+      <SidebarTooltip label="Issues">
+        <Link href="/issues" className="flex items-center justify-center w-10 h-10 rounded hover:bg-muted">
+          <AlertCircle className="w-4 h-4" />
         </Link>
       </SidebarTooltip>
       <ModeToggle />

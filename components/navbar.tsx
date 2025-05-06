@@ -5,7 +5,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
 import { Button } from "./ui/button"
-import { PenLine, User, Settings, LogOut, Loader2, Menu, Minimize, ChevronDown, BookOpen } from "lucide-react"
+import { PenLine, User, Settings, LogOut, Loader2, Menu, Minimize, ChevronDown, BookOpen, AlertCircle } from "lucide-react"
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { IssueDialog } from "./issue-dialog"
 import { ThemeToggle } from "./theme-toggle"
@@ -52,7 +52,7 @@ export function Navbar() {
                     MINI
                   </Link>
                 </SheetTitle>
-                <Link href="/article" className="flex items-center gap-2 hover:bg-muted cursor-pointer rounded-lg px-2 py-2" onClick={() => setIsMobileOpen(false)}>
+                <Link href="/articles" className="flex items-center gap-2 hover:bg-muted cursor-pointer rounded-lg px-2 py-2" onClick={() => setIsMobileOpen(false)}>
                   <BookOpen className="w-4 h-4" /> Read
                 </Link>
                 <Link href="/write" className="flex items-center gap-2 hover:bg-muted cursor-pointer rounded-lg px-2 py-2" onClick={() => setIsMobileOpen(false)}>
@@ -66,6 +66,11 @@ export function Navbar() {
                 {user && (
                   <Link href="/settings" className="flex items-center gap-2 hover:bg-muted cursor-pointer rounded-lg px-2 py-2" onClick={() => setIsMobileOpen(false)} >
                     <Settings className="w-4 h-4" /> Settings
+                  </Link>
+                )}
+                {user && (
+                  <Link href="/issues" className="flex items-center gap-2 hover:bg-muted cursor-pointer rounded-lg px-2 py-2" onClick={() => setIsMobileOpen(false)} >
+                    <AlertCircle className="w-4 h-4" /> Issues
                   </Link>
                 )}
                 <div className="flex items-center gap-2 hover:bg-muted cursor-pointer rounded-lg px-2">
