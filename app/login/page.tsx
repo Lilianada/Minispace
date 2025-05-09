@@ -119,12 +119,6 @@ export default function LoginPage() {
             <CardDescription className="text-center">Welcome back to MINISPACE</CardDescription>
           </CardHeader>
           <CardContent>
-            {/* {!isFirebaseInitialized && (
-              <div className="mb-4 p-4 border rounded-md bg-amber-50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-200">
-                System is initializing. Please wait a moment.
-              </div>
-            )} */}
-
             {errors.general && (
               <div className="mb-4 p-4 border rounded-md bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-200">
                 {errors.general}

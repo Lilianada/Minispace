@@ -233,7 +233,6 @@ export default function SettingsPage() {
   if (!user) {
     return (
       <>
-        <Navbar />
         <div className="container mx-auto py-8 px-4">
           <div className="flex justify-center my-12">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
@@ -245,7 +244,6 @@ export default function SettingsPage() {
 
   return (
     <>
-      <Navbar />
       <div className="mx-auto py-8 px-4 sm:px-8">
         <h1 className="text-xl font-bold mb-8">Settings</h1>
 

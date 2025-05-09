@@ -149,7 +149,6 @@ export default function WritePage() {
 
   return (
     <>
-      <Navbar />
       <div className="container mx-auto py-8 sm:px-8">
         <div className="flex items-center gap-4 mb-8">
           <Button 

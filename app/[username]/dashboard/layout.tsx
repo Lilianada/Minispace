@@ -21,11 +21,7 @@ export default async function DashboardLayout({
   const resolvedParams = await Promise.resolve(params);
   const { username } = resolvedParams;
   
-  // Get authenticated user data using our server-side auth utility
-  // This will verify the session cookie and check ownership of the dashboard
   const result = await getAuthenticatedUser(username);
-  console.log(result, username)
-  // Handle redirects if needed
   if (result.redirectTo) {
     redirect(result.redirectTo);
   }
@@ -36,7 +32,7 @@ export default async function DashboardLayout({
   
   return (
     <div className="max-w-4xl min-h-screen mx-auto w-full flex relative">
-      <Sidebar username={username} userData={userData} />
+      <Sidebar username={username}/>
       
       {/* Content */}
       <main className="flex-1 flex flex-col border-x">

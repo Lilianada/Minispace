@@ -21,14 +21,14 @@ export default function RootLayout({
         <meta property="og:title" content="MINISPACE – Minimalist Reading & Writing Platform" />
         <meta property="og:description" content="A minimalist platform for reading and writing. Publish, read, and discover articles without the noise." />
         <meta property="og:type" content="website" />
-        <meta property="og:url" content="https://mini.lilyslab.xyz/" />
+        <meta property="og:url" content="https://minispace.app/" />
         <meta property="og:image" content="/logo.png" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="MINISPACE – Minimalist Reading & Writing Platform" />
         <meta name="twitter:description" content="A minimalist platform for reading and writing. Publish, read, and discover articles without the noise." />
         <meta name="twitter:image" content="/logo.png" />
         <link rel="icon" href="/logo.png" type="image/png" />
-        <link rel="canonical" href="https://mini.lilyslab.xyz/" />
+        <link rel="canonical" href="https://minispace.app/" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -36,20 +36,20 @@ export default function RootLayout({
               "@context": "https://schema.org",
               "@type": "WebSite",
               "name": "MINISPACE – Minimalist Reading & Writing Platform",
-              "url": "https://mini.lilyslab.xyz/",
+              "url": "https://minispace.app/",
               "description": "A minimalist platform for reading and writing. Publish, read, and discover articles without the noise.",
-              "image": "https://mini.lilyslab.xyz/logo.png",
+              "image": "https://minispace.app/logo.png",
               "publisher": {
                 "@type": "Organization",
                 "name": "Lily's Lab",
                 "logo": {
                   "@type": "ImageObject",
-                  "url": "https://mini.lilyslab.xyz/logo.png"
+                  "url": "https://minispace.app/logo.png"
                 }
               },
               "sameAs": [
-                "https://twitter.com/lilian_ada_",
-                "https://github.com/Lilianada"
+                "https://twitter.com/minispace_app",
+                "https://github.com/Lilianada/minispace"
               ]
             })
           }}
