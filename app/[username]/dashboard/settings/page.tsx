@@ -7,31 +7,22 @@ import { updateEmail, updatePassword, reauthenticateWithCredential, EmailAuthPro
 import { db } from "@/lib/firebase"
 import { useAuth } from "@/lib/auth-context"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card } from "@/components/ui/card"
 import { useToast } from "@/components/ui/use-toast"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Switch } from "@/components/ui/switch"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Textarea } from "@/components/ui/textarea"
-import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
-import { AlertCircle, Check, Copy, Download, Globe, Info, Key, Palette, Save, Shield, User } from "lucide-react"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
-import {
-  Alert,
-  AlertDescription,
-  AlertTitle,
-} from "@/components/ui/alert"
+import { BookOpen, Globe, Palette, Shield, User } from "lucide-react"
+
+// Import reusable components
+import { AccountSettings } from "@/components/settings/account-settings"
+import { PasswordSettings } from "@/components/settings/password-settings"
+import { BlogSettingsForm } from "@/components/settings/blog-settings-form"
+import { AppearanceSettings } from "@/components/settings/appearance-settings"
+import { DomainSettings } from "@/components/settings/domain-settings"
+import { ThemeSelector } from "@/components/settings/theme-selector"
+import { DeleteAccount } from "@/components/settings/delete-account"
+import { DataExport } from "@/components/settings/data-export"
+import DashboardShell from "@/components/dashboard/dashboard-shell"
 import { BlogSettings, StylePreferences } from "@/lib/types"
 
 export default function SettingsPage() {
@@ -44,9 +35,6 @@ export default function SettingsPage() {
   const router = useRouter();
   const { toast } = useToast();
   
-  // Tab state
-  const [activeTab, setActiveTab] = useState("blog")
-  
   // Account settings state
   const [username, setUsername] = useState("")
   const [email, setEmail] = useState("")
@@ -57,7 +45,6 @@ export default function SettingsPage() {
   const [isEditing, setIsEditing] = useState(false)
   const [isChangingPassword, setIsChangingPassword] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [isExporting, setIsExporting] = useState(false)
   
   // Blog settings state
@@ -74,6 +61,7 @@ export default function SettingsPage() {
   
   // Domain settings state
   const [customDomain, setCustomDomain] = useState("")
+  const [isVerified, setIsVerified] = useState(false)
   const [isVerifyingDomain, setIsVerifyingDomain] = useState(false)
   
   // Style preferences state
@@ -113,12 +101,11 @@ export default function SettingsPage() {
         })
       }
       
-      // Load custom domain if available
-      if (userData.customDomain) {
-        setCustomDomain(userData.customDomain)
-      }
+      // Load domain settings
+      setCustomDomain(userData.customDomain || "")
+      setIsVerified(!!userData.customDomain)
       
-      // Load style preferences if available
+      // Load style preferences
       if (userData.stylePreferences) {
         setStylePreferences({
           fontFamily: userData.stylePreferences.fontFamily || "system-ui",
@@ -129,194 +116,230 @@ export default function SettingsPage() {
         })
       }
       
-      // Load theme selection if available
-      if (userData.theme) {
-        setSelectedTheme(userData.theme)
-      }
+      // Load theme selection
+      setSelectedTheme(userData.theme || "default")
     }
-  }, [user, userData, router])
+  }, [user, userData, router, loading])
 
   const handleUpdateProfile = async () => {
-    if (!user) return
-
-    if (!username || !email) {
+    if (!user) return;
+    
+    // Validate username
+    if (!username) {
       toast({
-        title: "Error",
-        description: "Username and email are required",
+        title: "Username required",
+        description: "Please enter a username.",
         variant: "destructive",
-      })
-      return
+      });
+      return;
     }
-
+    
+    // Validate email
+    if (!email) {
+      toast({
+        title: "Email required",
+        description: "Please enter an email address.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Check if username is changed and already exists
+    if (username !== userData?.username) {
+      try {
+        const usersRef = collection(db, "Users");
+        const q = query(usersRef, where("username", "==", username));
+        const querySnapshot = await getDocs(q);
+        
+        if (!querySnapshot.empty) {
+          toast({
+            title: "Username already taken",
+            description: "Please choose a different username.",
+            variant: "destructive",
+          });
+          return;
+        }
+      } catch (error) {
+        console.error("Error checking username:", error);
+        toast({
+          title: "Error",
+          description: "Failed to check username availability.",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+    
     try {
-      setIsSubmitting(true)
+      setIsSubmitting(true);
+      setIsEditing(true);
       
-      // Check if username has changed
-      const usernameChanged = username !== userData?.username
-
-      // Update Firestore document
-      await updateDoc(doc(db, "Users", user.uid), {
+      // Update email in Firebase Auth if changed
+      if (email !== user.email) {
+        await updateEmail(user, email);
+      }
+      
+      // Update user document in Firestore
+      const userDoc = doc(db, `Users/${user.uid}`);
+      await updateDoc(userDoc, {
         username,
         email,
-      })
-
-      // Update username in all past articles if it changed
-      if (usernameChanged) {
-        try {
-          // Query all articles by this author
-          const articlesQuery = query(
-            collection(db, "Articles"),
-            where("authorId", "==", user.uid)
-          )
-          
-          const articlesSnapshot = await getDocs(articlesQuery)
-          
-          // Update each article with the new username
-          const updatePromises = articlesSnapshot.docs.map(articleDoc => {
-            return updateDoc(doc(db, "Articles", articleDoc.id), {
-              authorName: username
-            })
-          })
-          
-          await Promise.all(updatePromises)
-          
-          toast({
-            title: "Username Updated",
-            description: `Username updated in ${articlesSnapshot.size} article${articlesSnapshot.size !== 1 ? 's' : ''}.`,
-          })
-        } catch (articlesError) {
-          console.error("Error updating articles:", articlesError)
-          toast({
-            title: "Warning",
-            description: "Profile updated but there was an issue updating your username in past articles.",
-            variant: "destructive",
-          })
-        }
-      }
-
-      // Update email in Firebase Auth if it changed
-      if (email !== userData?.email) {
-        if (!currentPassword) {
-          toast({
-            title: "Error",
-            description: "Current password is required to change email",
-            variant: "destructive",
-          })
-          return
-        }
-
-        const credential = EmailAuthProvider.credential(userData?.email || "", currentPassword)
-
-        await reauthenticateWithCredential(user, credential)
-        await updateEmail(user, email)
-      }
-
+      });
+      
       toast({
-        title: "Success",
-        description: "Profile updated successfully",
-      })
-
-      setIsEditing(false)
-      setCurrentPassword("")
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to update profile",
-        variant: "destructive",
-      })
+        title: "Profile updated",
+        description: "Your profile has been updated successfully.",
+      });
+      
+      // If username changed, redirect to new dashboard URL
+      if (username !== urlUsername) {
+        router.push(`/${username}/dashboard/settings`);
+      }
+    } catch (error: any) {
+      console.error("Error updating profile:", error);
+      
+      // Handle specific Firebase Auth errors
+      if (error.code === "auth/requires-recent-login") {
+        toast({
+          title: "Authentication required",
+          description: "Please log out and log back in to change your email.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to update profile. Please try again.",
+          variant: "destructive",
+        });
+      }
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
+      setIsEditing(false);
     }
-  }
-
+  };
+  
   const handleChangePassword = async () => {
-    if (!user) return
-
+    if (!user) return;
+    
+    // Validate passwords
     if (!currentPassword || !newPassword || !confirmPassword) {
       toast({
-        title: "Error",
-        description: "All password fields are required",
+        title: "All fields required",
+        description: "Please fill in all password fields.",
         variant: "destructive",
-      })
-      return
+      });
+      return;
     }
-
+    
     if (newPassword !== confirmPassword) {
       toast({
-        title: "Error",
-        description: "New passwords do not match",
+        title: "Passwords don't match",
+        description: "New password and confirmation don't match.",
         variant: "destructive",
-      })
-      return
+      });
+      return;
     }
-
+    
     try {
-      setIsSubmitting(true)
-
-      const credential = EmailAuthProvider.credential(userData?.email || "", currentPassword)
-
-      await reauthenticateWithCredential(user, credential)
-      await updatePassword(user, newPassword)
-
+      setIsSubmitting(true);
+      setIsChangingPassword(true);
+      
+      // Re-authenticate user
+      const credential = EmailAuthProvider.credential(user.email!, currentPassword);
+      await reauthenticateWithCredential(user, credential);
+      
+      // Update password
+      await updatePassword(user, newPassword);
+      
+      // Clear password fields
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      
       toast({
-        title: "Success",
-        description: "Password updated successfully",
-      })
-
-      setIsChangingPassword(false)
-      setCurrentPassword("")
-      setNewPassword("")
-      setConfirmPassword("")
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to update password",
-        variant: "destructive",
-      })
+        title: "Password updated",
+        description: "Your password has been updated successfully.",
+      });
+    } catch (error: any) {
+      console.error("Error changing password:", error);
+      
+      // Handle specific Firebase Auth errors
+      if (error.code === "auth/wrong-password") {
+        toast({
+          title: "Incorrect password",
+          description: "Your current password is incorrect.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to change password. Please try again.",
+          variant: "destructive",
+        });
+      }
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
+      setIsChangingPassword(false);
     }
-  }
-
+  };
+  
   const handleDeleteAccount = async () => {
-    if (!user) return
-
+    if (!user) return;
+    
     if (!deleteConfirmPassword) {
       toast({
-        title: "Error",
-        description: "Password is required to delete account",
+        title: "Password required",
+        description: "Please enter your password to confirm account deletion.",
         variant: "destructive",
-      })
-      return
+      });
+      return;
     }
-
+    
     try {
-      setIsSubmitting(true)
-
-      const credential = EmailAuthProvider.credential(userData?.email || "", deleteConfirmPassword)
-
-      await reauthenticateWithCredential(user, credential)
-      await deleteUser(user)
-
+      setIsSubmitting(true);
+      
+      // Re-authenticate user
+      const credential = EmailAuthProvider.credential(user.email!, deleteConfirmPassword);
+      await reauthenticateWithCredential(user, credential);
+      
+      // Delete user document from Firestore
+      await updateDoc(doc(db, `Users/${user.uid}`), {
+        deleted: true,
+        deletedAt: new Date(),
+      });
+      
+      // Delete user from Firebase Auth
+      await deleteUser(user);
+      
+      // Redirect to home page
+      router.push("/");
+      
       toast({
-        title: "Account Deleted",
-        description: "Your account has been permanently deleted",
-      })
-
-      router.push("/")
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to delete account",
-        variant: "destructive",
-      })
+        title: "Account deleted",
+        description: "Your account has been permanently deleted.",
+      });
+    } catch (error: any) {
+      console.error("Error deleting account:", error);
+      
+      // Handle specific Firebase Auth errors
+      if (error.code === "auth/wrong-password") {
+        toast({
+          title: "Incorrect password",
+          description: "The password you entered is incorrect.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to delete account. Please try again.",
+          variant: "destructive",
+        });
+      }
     } finally {
-      setIsSubmitting(false)
-      setIsDeleteDialogOpen(false)
-      setDeleteConfirmPassword("")
+      setIsSubmitting(false);
     }
-  }
-
+  };
+  
   // Function to save blog settings
   const saveBlogSettings = async () => {
     if (!user) return;
@@ -324,19 +347,21 @@ export default function SettingsPage() {
     try {
       setIsSubmitting(true);
       
-      await updateDoc(doc(db, "Users", user.uid), {
+      const userDoc = doc(db, `Users/${user.uid}`);
+      await updateDoc(userDoc, {
         enableBlog,
-        blogSettings
+        blogSettings,
       });
       
       toast({
-        title: "Success",
-        description: "Blog settings updated successfully",
+        title: "Blog settings saved",
+        description: "Your blog settings have been updated successfully.",
       });
     } catch (error) {
+      console.error("Error saving blog settings:", error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to update blog settings",
+        description: "Failed to save blog settings. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -351,18 +376,20 @@ export default function SettingsPage() {
     try {
       setIsSubmitting(true);
       
-      await updateDoc(doc(db, "Users", user.uid), {
-        stylePreferences
+      const userDoc = doc(db, `Users/${user.uid}`);
+      await updateDoc(userDoc, {
+        stylePreferences,
       });
       
       toast({
-        title: "Success",
-        description: "Style preferences updated successfully",
+        title: "Appearance saved",
+        description: "Your appearance settings have been updated successfully.",
       });
     } catch (error) {
+      console.error("Error saving style preferences:", error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to update style preferences",
+        description: "Failed to save appearance settings. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -377,18 +404,20 @@ export default function SettingsPage() {
     try {
       setIsSubmitting(true);
       
-      await updateDoc(doc(db, "Users", user.uid), {
-        theme: selectedTheme
+      const userDoc = doc(db, `Users/${user.uid}`);
+      await updateDoc(userDoc, {
+        theme: selectedTheme,
       });
       
       toast({
-        title: "Success",
-        description: "Theme updated successfully",
+        title: "Theme saved",
+        description: "Your theme has been updated successfully.",
       });
     } catch (error) {
+      console.error("Error saving theme:", error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to update theme",
+        description: "Failed to save theme. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -398,11 +427,14 @@ export default function SettingsPage() {
   
   // Function to verify custom domain
   const verifyCustomDomain = async () => {
-    if (!user) return;
-    if (!customDomain) {
+    if (!user || !customDomain) return;
+    
+    // Validate domain format
+    const domainRegex = /^[a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,}$/i;
+    if (!domainRegex.test(customDomain)) {
       toast({
-        title: "Error",
-        description: "Please enter a domain to verify",
+        title: "Invalid domain",
+        description: "Please enter a valid domain name.",
         variant: "destructive",
       });
       return;
@@ -411,22 +443,58 @@ export default function SettingsPage() {
     try {
       setIsVerifyingDomain(true);
       
-      // In a real implementation, you would verify the domain here
-      // For now, we'll just simulate a successful verification
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // In a real implementation, we would verify the domain by checking DNS records
+      // For this demo, we'll just simulate a successful verification
       
-      await updateDoc(doc(db, "Users", user.uid), {
-        customDomain
+      // Update user document with custom domain
+      const userDoc = doc(db, `Users/${user.uid}`);
+      await updateDoc(userDoc, {
+        customDomain,
       });
       
+      setIsVerified(true);
+      
       toast({
-        title: "Success",
-        description: "Domain verified and saved successfully",
+        title: "Domain verified",
+        description: "Your custom domain has been verified and connected.",
       });
     } catch (error) {
+      console.error("Error verifying domain:", error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to verify domain",
+        description: "Failed to verify domain. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsVerifyingDomain(false);
+    }
+  };
+  
+  // Function to remove custom domain
+  const removeCustomDomain = async () => {
+    if (!user) return;
+    
+    try {
+      setIsVerifyingDomain(true);
+      
+      // Update user document to remove custom domain
+      const userDoc = doc(db, `Users/${user.uid}`);
+      await updateDoc(userDoc, {
+        customDomain: "",
+      });
+      
+      setCustomDomain("");
+      setIsVerified(false);
+      
+      toast({
+        title: "Domain removed",
+        description: "Your custom domain has been disconnected.",
+      });
+    } catch (error) {
+      console.error("Error removing domain:", error);
+      toast({
+        title: "Error",
+        description: "Failed to remove domain. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -441,40 +509,62 @@ export default function SettingsPage() {
     try {
       setIsExporting(true);
       
-      // Fetch all user data
-      const userDoc = await doc(db, "Users", user.uid);
-      
-      // Fetch all pages
-      const pagesQuery = query(collection(db, `Users/${user.uid}/pages`));
-      const pagesSnapshot = await getDocs(pagesQuery);
-      const pages = pagesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      
-      // Create export data
-      const exportData = {
-        user: userData,
-        pages,
-        exportDate: new Date().toISOString()
+      // Fetch user data
+      const userData = {
+        profile: {
+          username,
+          email,
+        },
+        blogSettings,
+        stylePreferences,
+        theme: selectedTheme,
+        customDomain,
       };
       
-      // Convert to JSON and create download link
+      // Fetch pages
+      const pagesRef = collection(db, `Users/${user.uid}/pages`);
+      const pagesSnapshot = await getDocs(pagesRef);
+      const pages = pagesSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      
+      // Fetch blog posts
+      const postsRef = collection(db, `Users/${user.uid}/blogPosts`);
+      const postsSnapshot = await getDocs(postsRef);
+      const posts = postsSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      
+      // Combine all data
+      const exportData = {
+        userData,
+        pages,
+        posts,
+        exportDate: new Date().toISOString(),
+      };
+      
+      // Create a download link
       const dataStr = JSON.stringify(exportData, null, 2);
       const dataUri = `data:application/json;charset=utf-8,${encodeURIComponent(dataStr)}`;
       
-      // Create and click a download link
-      const exportFileDefaultName = `minispace-export-${new Date().toISOString().slice(0, 10)}.json`;
+      const exportFileDefaultName = `minispace-export-${username}-${new Date().toISOString().split('T')[0]}.json`;
+      
       const linkElement = document.createElement('a');
       linkElement.setAttribute('href', dataUri);
       linkElement.setAttribute('download', exportFileDefaultName);
       linkElement.click();
       
       toast({
-        title: "Success",
-        description: "Data exported successfully",
+        title: "Data exported",
+        description: "Your data has been exported successfully.",
       });
     } catch (error) {
+      console.error("Error exporting data:", error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to export data",
+        description: "Failed to export data. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -482,607 +572,128 @@ export default function SettingsPage() {
     }
   };
 
-  if (!user) {
+  if (loading) {
     return (
-      <div className="flex justify-center my-12">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-      </div>
-    )
+      <DashboardShell>
+        <div className="container py-6 space-y-6">
+          <Skeleton className="h-8 w-64" />
+          <Skeleton className="h-10 w-full" />
+          <div className="space-y-4">
+            <Skeleton className="h-64 w-full" />
+            <Skeleton className="h-64 w-full" />
+          </div>
+        </div>
+      </DashboardShell>
+    );
   }
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-xl font-bold">Settings</h1>
-      
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid grid-cols-5 w-full">
-          <TabsTrigger value="blog">Blog</TabsTrigger>
-          <TabsTrigger value="domain">Domain</TabsTrigger>
-          <TabsTrigger value="style">Style</TabsTrigger>
-          <TabsTrigger value="theme">Theme</TabsTrigger>
-          <TabsTrigger value="account">Account</TabsTrigger>
-        </TabsList>
+    <DashboardShell>
+      <div className="container py-6 space-y-6">
+        <h1 className="text-3xl font-bold">Settings</h1>
         
-        {/* Blog Settings Tab */}
-        <TabsContent value="blog" className="space-y-6 mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">Blog Settings</CardTitle>
-              <CardDescription>Configure your blog functionality and default settings</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between rounded-lg border p-4">
-                <div className="space-y-0.5">
-                  <Label className="text-base">Enable Blog</Label>
-                  <p className="text-sm text-muted-foreground">Allow visitors to view your blog content</p>
-                </div>
-                <Switch
-                  checked={enableBlog}
-                  onCheckedChange={setEnableBlog}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="blogTitle">Blog Title</Label>
-                <Input
-                  id="blogTitle"
-                  value={blogSettings.title}
-                  onChange={(e) => setBlogSettings({...blogSettings, title: e.target.value})}
-                  placeholder="My Awesome Blog"
-                />
-                <p className="text-xs text-muted-foreground">This will be displayed as the title of your blog</p>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="blogDescription">Blog Description</Label>
-                <Textarea
-                  id="blogDescription"
-                  value={blogSettings.description}
-                  onChange={(e) => setBlogSettings({...blogSettings, description: e.target.value})}
-                  placeholder="A short description of your blog"
-                  className="h-20"
-                />
-                <p className="text-xs text-muted-foreground">This will appear in search results and social shares</p>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="footerText">Footer Text</Label>
-                <Input
-                  id="footerText"
-                  value={blogSettings.footerText}
-                  onChange={(e) => setBlogSettings({...blogSettings, footerText: e.target.value})}
-                  placeholder={`© ${new Date().getFullYear()} ${username}`}
-                />
-                <p className="text-xs text-muted-foreground">Text to display in the footer of your blog</p>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="navStyle">Navigation Style</Label>
-                <Select 
-                  value={blogSettings.navStyle} 
-                  onValueChange={(value) => setBlogSettings({...blogSettings, navStyle: value as 'minimal' | 'standard' | 'expanded'})}
-                >
-                  <SelectTrigger id="navStyle">
-                    <SelectValue placeholder="Select a navigation style" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="minimal">Minimal</SelectItem>
-                    <SelectItem value="standard">Standard</SelectItem>
-                    <SelectItem value="expanded">Expanded</SelectItem>
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground">Choose how your blog navigation is displayed</p>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="defaultLayout">Default Post Layout</Label>
-                <Select 
-                  value={blogSettings.defaultLayout} 
-                  onValueChange={(value) => setBlogSettings({...blogSettings, defaultLayout: value})}
-                >
-                  <SelectTrigger id="defaultLayout">
-                    <SelectValue placeholder="Select a default layout" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="default">Default</SelectItem>
-                    <SelectItem value="minimal">Minimal</SelectItem>
-                    <SelectItem value="centered">Centered</SelectItem>
-                    <SelectItem value="wide">Wide</SelectItem>
-                    <SelectItem value="sidebar">With Sidebar</SelectItem>
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground">Default layout for new blog posts</p>
-              </div>
-              
-              <div className="flex items-center justify-between rounded-lg border p-4">
-                <div className="space-y-0.5">
-                  <Label className="text-base">Show Dates</Label>
-                  <p className="text-sm text-muted-foreground">Display publish dates on blog posts</p>
-                </div>
-                <Switch
-                  checked={blogSettings.showDates}
-                  onCheckedChange={(checked) => setBlogSettings({...blogSettings, showDates: checked})}
-                />
-              </div>
-              
-              <div className="flex items-center justify-between rounded-lg border p-4">
-                <div className="space-y-0.5">
-                  <Label className="text-base">Show Tags</Label>
-                  <p className="text-sm text-muted-foreground">Display tags on blog posts</p>
-                </div>
-                <Switch
-                  checked={blogSettings.showTags}
-                  onCheckedChange={(checked) => setBlogSettings({...blogSettings, showTags: checked})}
-                />
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Button onClick={saveBlogSettings} disabled={isSubmitting}>
-                {isSubmitting ? (
-                  <>
-                    <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-b-transparent"></div>
-                    Saving...
-                  </>
-                ) : (
-                  <>
-                    <Save className="mr-2 h-4 w-4" />
-                    Save Blog Settings
-                  </>
-                )}
-              </Button>
-            </CardFooter>
-          </Card>
-        </TabsContent>
-        
-        {/* Domain Settings Tab */}
-        <TabsContent value="domain" className="space-y-6 mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Globe className="mr-2 h-5 w-5" />
-                Domain Management
-              </CardTitle>
-              <CardDescription>Manage your blog's domain settings</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Alert>
-                <Info className="h-4 w-4" />
-                <AlertDescription>
-                  Your blog is available at <strong>{urlUsername}.minispace.app</strong>
-                </AlertDescription>
-              </Alert>
-              
-              <div className="space-y-2">
-                <Label htmlFor="customDomain">Custom Domain (Premium Feature)</Label>
-                <div className="flex gap-2">
-                  <Input
-                    id="customDomain"
-                    value={customDomain}
-                    onChange={(e) => setCustomDomain(e.target.value)}
-                    placeholder="myblog.com"
-                    disabled={isVerifyingDomain}
-                  />
-                  <Button 
-                    variant="outline" 
-                    onClick={verifyCustomDomain}
-                    disabled={isVerifyingDomain || !customDomain}
-                  >
-                    {isVerifyingDomain ? (
-                      <>
-                        <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-b-transparent"></div>
-                        Verifying...
-                      </>
-                    ) : (
-                      "Verify"
-                    )}
-                  </Button>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Enter your custom domain to connect it to your blog
-                </p>
-              </div>
-              
-              <Separator className="my-4" />
-              
-              <div className="space-y-2">
-                <Label>DNS Configuration</Label>
-                <div className="rounded-md bg-muted p-4 font-mono text-sm">
-                  <div className="flex justify-between items-center">
-                    <span>CNAME record: <strong>@</strong> points to <strong>minispace.app</strong></span>
-                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                      <Copy className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Add this record to your domain's DNS settings to verify ownership
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        {/* Style Settings Tab */}
-        <TabsContent value="style" className="space-y-6 mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Palette className="mr-2 h-5 w-5" />
-                Style Preferences
-              </CardTitle>
-              <CardDescription>Customize the default appearance of your blog</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="fontFamily">Font Family</Label>
-                <Select 
-                  value={stylePreferences.fontFamily} 
-                  onValueChange={(value) => setStylePreferences({...stylePreferences, fontFamily: value})}
-                >
-                  <SelectTrigger id="fontFamily">
-                    <SelectValue placeholder="Select a font family" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="system-ui">System UI</SelectItem>
-                    <SelectItem value="serif">Serif</SelectItem>
-                    <SelectItem value="sans-serif">Sans Serif</SelectItem>
-                    <SelectItem value="monospace">Monospace</SelectItem>
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground">Default font for your blog content</p>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="fontSize">Font Size</Label>
-                <Select 
-                  value={stylePreferences.fontSize} 
-                  onValueChange={(value) => setStylePreferences({...stylePreferences, fontSize: value})}
-                >
-                  <SelectTrigger id="fontSize">
-                    <SelectValue placeholder="Select a font size" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="14px">Small (14px)</SelectItem>
-                    <SelectItem value="16px">Medium (16px)</SelectItem>
-                    <SelectItem value="18px">Large (18px)</SelectItem>
-                    <SelectItem value="20px">Extra Large (20px)</SelectItem>
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground">Default text size for your blog content</p>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="textColor">Text Color</Label>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="color"
-                    id="textColor"
-                    value={stylePreferences.textColor}
-                    onChange={(e) => setStylePreferences({...stylePreferences, textColor: e.target.value})}
-                    className="w-10 h-10 rounded-md border border-input"
-                  />
-                  <Input
-                    value={stylePreferences.textColor}
-                    onChange={(e) => setStylePreferences({...stylePreferences, textColor: e.target.value})}
-                    className="flex-1"
-                  />
-                </div>
-                <p className="text-xs text-muted-foreground">Default text color for your blog</p>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="backgroundColor">Background Color</Label>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="color"
-                    id="backgroundColor"
-                    value={stylePreferences.backgroundColor}
-                    onChange={(e) => setStylePreferences({...stylePreferences, backgroundColor: e.target.value})}
-                    className="w-10 h-10 rounded-md border border-input"
-                  />
-                  <Input
-                    value={stylePreferences.backgroundColor}
-                    onChange={(e) => setStylePreferences({...stylePreferences, backgroundColor: e.target.value})}
-                    className="flex-1"
-                  />
-                </div>
-                <p className="text-xs text-muted-foreground">Default background color for your blog</p>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="accentColor">Accent Color</Label>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="color"
-                    id="accentColor"
-                    value={stylePreferences.accentColor}
-                    onChange={(e) => setStylePreferences({...stylePreferences, accentColor: e.target.value})}
-                    className="w-10 h-10 rounded-md border border-input"
-                  />
-                  <Input
-                    value={stylePreferences.accentColor}
-                    onChange={(e) => setStylePreferences({...stylePreferences, accentColor: e.target.value})}
-                    className="flex-1"
-                  />
-                </div>
-                <p className="text-xs text-muted-foreground">Color used for links and highlights</p>
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Button onClick={saveStylePreferences} disabled={isSubmitting}>
-                {isSubmitting ? (
-                  <>
-                    <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-b-transparent"></div>
-                    Saving...
-                  </>
-                ) : (
-                  <>
-                    <Save className="mr-2 h-4 w-4" />
-                    Save Style Preferences
-                  </>
-                )}
-              </Button>
-            </CardFooter>
-          </Card>
-        </TabsContent>
-        
-        {/* Theme Selection Tab */}
-        <TabsContent value="theme" className="space-y-6 mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Palette className="mr-2 h-5 w-5" />
-                Theme Selection
-              </CardTitle>
-              <CardDescription>Choose a theme for your blog</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div 
-                  className={`border rounded-lg p-2 cursor-pointer ${selectedTheme === 'default' ? 'ring-2 ring-primary' : ''}`}
-                  onClick={() => setSelectedTheme('default')}
-                >
-                  <div className="aspect-video bg-white rounded-md mb-2 flex items-center justify-center text-center p-4">
-                    <div className="w-full">
-                      <div className="h-4 bg-gray-200 rounded-md mb-2 w-1/2 mx-auto"></div>
-                      <div className="h-2 bg-gray-200 rounded-md mb-1 w-3/4 mx-auto"></div>
-                      <div className="h-2 bg-gray-200 rounded-md mb-1 w-2/3 mx-auto"></div>
-                      <div className="h-2 bg-gray-200 rounded-md w-3/4 mx-auto"></div>
-                    </div>
-                  </div>
-                  <p className="text-sm font-medium text-center">Default</p>
-                </div>
-                
-                <div 
-                  className={`border rounded-lg p-2 cursor-pointer ${selectedTheme === 'minimal' ? 'ring-2 ring-primary' : ''}`}
-                  onClick={() => setSelectedTheme('minimal')}
-                >
-                  <div className="aspect-video bg-gray-50 rounded-md mb-2 flex items-center justify-center text-center p-4">
-                    <div className="w-full">
-                      <div className="h-4 bg-gray-200 rounded-md mb-2 w-1/3 mx-auto"></div>
-                      <div className="h-2 bg-gray-200 rounded-md mb-1 w-2/3 mx-auto"></div>
-                      <div className="h-2 bg-gray-200 rounded-md mb-1 w-1/2 mx-auto"></div>
-                      <div className="h-2 bg-gray-200 rounded-md w-2/3 mx-auto"></div>
-                    </div>
-                  </div>
-                  <p className="text-sm font-medium text-center">Minimal</p>
-                </div>
-                
-                <div 
-                  className={`border rounded-lg p-2 cursor-pointer ${selectedTheme === 'modern' ? 'ring-2 ring-primary' : ''}`}
-                  onClick={() => setSelectedTheme('modern')}
-                >
-                  <div className="aspect-video bg-black rounded-md mb-2 flex items-center justify-center text-center p-4">
-                    <div className="w-full">
-                      <div className="h-4 bg-gray-700 rounded-md mb-2 w-1/2 mx-auto"></div>
-                      <div className="h-2 bg-gray-700 rounded-md mb-1 w-3/4 mx-auto"></div>
-                      <div className="h-2 bg-gray-700 rounded-md mb-1 w-2/3 mx-auto"></div>
-                      <div className="h-2 bg-gray-700 rounded-md w-3/4 mx-auto"></div>
-                    </div>
-                  </div>
-                  <p className="text-sm font-medium text-center">Modern</p>
-                </div>
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Button onClick={saveThemeSelection} disabled={isSubmitting}>
-                {isSubmitting ? (
-                  <>
-                    <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-b-transparent"></div>
-                    Saving...
-                  </>
-                ) : (
-                  <>
-                    <Save className="mr-2 h-4 w-4" />
-                    Save Theme
-                  </>
-                )}
-              </Button>
-            </CardFooter>
-          </Card>
-        </TabsContent>
-        
-        {/* Account Tab */}
-        <TabsContent value="account" className="space-y-6 mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <User className="mr-2 h-5 w-5" />
-                Profile Information
-              </CardTitle>
-              <CardDescription>Update your account details</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="username">Username</Label>
-                <Input
-                  id="username"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  disabled={!isEditing || isSubmitting}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  disabled={!isEditing || isSubmitting}
-                />
-              </div>
-            </CardContent>
-            <CardFooter className="flex justify-between">
-              <Button variant="outline" onClick={() => setIsEditing(!isEditing)}>
-                {isEditing ? "Cancel" : "Edit Profile"}
-              </Button>
-              {isEditing && (
-                <Button onClick={handleUpdateProfile} disabled={isSubmitting}>
-                  {isSubmitting ? (
-                    <>
-                      <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-b-transparent"></div>
-                      Saving...
-                    </>
-                  ) : (
-                    "Save Changes"
-                  )}
-                </Button>
-              )}
-            </CardFooter>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Key className="mr-2 h-5 w-5" />
-                Password
-              </CardTitle>
-              <CardDescription>Update your password</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="currentPassword">Current Password</Label>
-                <Input
-                  id="currentPassword"
-                  type="password"
-                  value={currentPassword}
-                  onChange={(e) => setCurrentPassword(e.target.value)}
-                  disabled={isSubmitting}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="newPassword">New Password</Label>
-                <Input
-                  id="newPassword"
-                  type="password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  disabled={isSubmitting}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirm New Password</Label>
-                <Input
-                  id="confirmPassword"
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  disabled={isSubmitting}
-                />
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Button onClick={handleChangePassword} disabled={isSubmitting || !currentPassword || !newPassword || !confirmPassword || newPassword !== confirmPassword}>
-                {isSubmitting && isChangingPassword ? (
-                  <>
-                    <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-b-transparent"></div>
-                    Updating...
-                  </>
-                ) : (
-                  <>Change Password</>
-                )}
-              </Button>
-            </CardFooter>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Delete Account</CardTitle>
-              <CardDescription>Permanently delete your account and all your data</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">
-                This action cannot be undone. All your data, including articles and profile information, will be
-                permanently deleted.
-              </p>
-            </CardContent>
-            <CardFooter>
-              <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="destructive">Delete Account</Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Are you absolutely sure?</DialogTitle>
-                    <DialogDescription>
-                      This action cannot be undone. This will permanently delete your account and remove all your data
-                      from our servers.
-                    </DialogDescription>
-                  </DialogHeader>
-
-                  <div className="space-y-2 py-4">
-                    <Label htmlFor="delete-confirm-password">Enter your password to confirm</Label>
-                    <Input
-                      id="delete-confirm-password"
-                      type="password"
-                      value={deleteConfirmPassword}
-                      onChange={(e) => setDeleteConfirmPassword(e.target.value)}
-                      disabled={isSubmitting}
-                    />
-                  </div>
-
-                  <DialogFooter>
-                    <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)} disabled={isSubmitting}>
-                      Cancel
-                    </Button>
-                    <Button variant="destructive" onClick={handleDeleteAccount} disabled={isSubmitting}>
-                      {isSubmitting ? "Deleting..." : "Delete Account"}
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-            </CardFooter>
-          </Card>
+        <Tabs defaultValue="account">
+          <TabsList className="grid grid-cols-5 w-full">
+            <TabsTrigger value="account">
+              <User className="h-4 w-4 mr-2" />
+              Account
+            </TabsTrigger>
+            <TabsTrigger value="blog">
+              <BookOpen className="h-4 w-4 mr-2" />
+              Blog
+            </TabsTrigger>
+            <TabsTrigger value="appearance">
+              <Palette className="h-4 w-4 mr-2" />
+              Appearance
+            </TabsTrigger>
+            <TabsTrigger value="domain">
+              <Globe className="h-4 w-4 mr-2" />
+              Domain
+            </TabsTrigger>
+            <TabsTrigger value="security">
+              <Shield className="h-4 w-4 mr-2" />
+              Security
+            </TabsTrigger>
+          </TabsList>
           
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Download className="mr-2 h-5 w-5" />
-                Data Export
-              </CardTitle>
-              <CardDescription>Download a copy of your data</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground mb-4">
-                Download a JSON file containing all your blog posts, pages, and account information.
-              </p>
-            </CardContent>
-            <CardFooter>
-              <Button variant="outline" onClick={exportUserData} disabled={isExporting}>
-                {isExporting ? (
-                  <>
-                    <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-b-transparent"></div>
-                    Exporting...
-                  </>
-                ) : (
-                  <>Export Data</>
-                )}
-              </Button>
-            </CardFooter>
-          </Card>
-        </TabsContent>
-      </Tabs>
-    </div>
+          <TabsContent value="account" className="space-y-6">
+            <AccountSettings
+              username={username}
+              setUsername={setUsername}
+              email={email}
+              setEmail={setEmail}
+              isSubmitting={isSubmitting}
+              onSave={handleUpdateProfile}
+            />
+            
+            <DataExport
+              onExport={exportUserData}
+              isExporting={isExporting}
+            />
+          </TabsContent>
+          
+          <TabsContent value="blog" className="space-y-6">
+            <BlogSettingsForm
+              blogSettings={blogSettings}
+              setBlogSettings={setBlogSettings}
+              enableBlog={enableBlog}
+              setEnableBlog={setEnableBlog}
+              onSave={saveBlogSettings}
+              isSubmitting={isSubmitting}
+            />
+          </TabsContent>
+          
+          <TabsContent value="appearance" className="space-y-6">
+            <AppearanceSettings
+              theme={selectedTheme}
+              setTheme={setSelectedTheme}
+              fontFamily={stylePreferences.fontFamily || "system"}
+              setFontFamily={(fontFamily) => setStylePreferences({...stylePreferences, fontFamily})}
+              isSubmitting={isSubmitting}
+              onSave={saveStylePreferences}
+            />
+            
+            <ThemeSelector
+              selectedTheme={selectedTheme}
+              setSelectedTheme={setSelectedTheme}
+              onSave={saveThemeSelection}
+              isSubmitting={isSubmitting}
+            />
+          </TabsContent>
+          
+          <TabsContent value="domain" className="space-y-6">
+            <DomainSettings
+              customDomain={customDomain}
+              setCustomDomain={setCustomDomain}
+              isVerified={isVerified}
+              isSubmitting={isVerifyingDomain}
+              onVerify={verifyCustomDomain}
+              onRemove={removeCustomDomain}
+            />
+          </TabsContent>
+          
+          <TabsContent value="security" className="space-y-6">
+            <PasswordSettings
+              currentPassword={currentPassword}
+              setCurrentPassword={setCurrentPassword}
+              newPassword={newPassword}
+              setNewPassword={setNewPassword}
+              confirmPassword={confirmPassword}
+              setConfirmPassword={setConfirmPassword}
+              isSubmitting={isSubmitting}
+              isChangingPassword={isChangingPassword}
+              onChangePassword={handleChangePassword}
+            />
+            
+            <DeleteAccount
+              onDelete={handleDeleteAccount}
+              isSubmitting={isSubmitting}
+              password={deleteConfirmPassword}
+              setPassword={setDeleteConfirmPassword}
+            />
+          </TabsContent>
+        </Tabs>
+      </div>
+    </DashboardShell>
   )
 }

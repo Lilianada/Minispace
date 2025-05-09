@@ -167,7 +167,7 @@ export default function PostPage() {
               Manage your published articles and drafts
             </p>
           </div>
-          <Link href={`/${userData?.username}/dashboard/write`}>
+          <Link href={`/${userData?.username}/dashboard/posts/new`}>
             <Button size="sm">
               <PenLineIcon className="w-3.5 h-3.5 mr-1" />
               <span className="text-xs">New Post</span>
@@ -178,7 +178,7 @@ export default function PostPage() {
           {posts.length === 0 ? (
             <div className="text-center py-8 border rounded-lg bg-muted/5">
               <p className="text-muted-foreground mb-4 text-sm">You haven't written any posts yet</p>
-              <Link href={`/${userData?.username}/dashboard/write`}>
+              <Link href={`/${userData?.username}/dashboard/posts/new`}>
                 <Button size="sm">
                   <PenLineIcon className="w-3.5 h-3.5 mr-1" />
                   Write Your First Post

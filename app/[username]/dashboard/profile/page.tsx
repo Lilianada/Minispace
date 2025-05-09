@@ -116,9 +116,9 @@ export default function ProfilePage() {
       
       setPages(pagesData);
       
-      // Fetch posts
+      // Fetch blog posts from the blogPosts subcollection
       const postsQuery = query(
-        collection(db, `Users/${user.uid}/Posts`),
+        collection(db, `Users/${user.uid}/blogPosts`),
         orderBy("createdAt", "desc")
       );
       
@@ -136,7 +136,7 @@ export default function ProfilePage() {
           publishedAt: data.publishedAt?.toDate() || new Date(),
           updatedAt: data.updatedAt?.toDate() || new Date(),
           views: data.views || 0,
-          readingTime: data.readingTime || 0,
+          readingTime: data.readTime || 0,
           tags: data.tags || []
         });
       });

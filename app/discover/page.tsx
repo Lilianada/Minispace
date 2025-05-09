@@ -294,18 +294,7 @@ export default function DiscoverPage() {
             ))}
           </div>
         ) : (
-          <>
-            {articles.length === 0 ? (
-              <div className="text-center py-12">
-                <p className="text-muted-foreground">No articles found</p>
-                <Link href="/write" className="mt-4 inline-block">
-                  <Button variant="outline" className="mt-4">
-                    Write Your First Article
-                  </Button>
-                </Link>
-              </div>
-            ) : (
-              <>
+            <>
                 <div className="space-y-6 transition-all duration-500" style={{ opacity: loading ? 0.5 : 1 }}>
                   {articles.map((article) => (
                     <Link href={`/discover/${article.id}`} key={article.id}>
@@ -386,8 +375,6 @@ export default function DiscoverPage() {
               </>
             )
           }
-          </>
-        )}
       </div>
       </>
     )
