@@ -1,10 +1,10 @@
-# Mini &nbsp; <img src="https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/minimize.svg" alt="Mini Logo" height="20" />
+# Minispace &nbsp; <img src="https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/minimize.svg" alt="Minispace Logo" height="20" />
 
 > A minimalist platform for reading and writing.  
 > Like Medium, but lighter, faster, and distraction-free.
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/minimize.svg" width="60" alt="Mini Logo" />
+  <img src="https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/minimize.svg" width="60" alt="Minispace Logo" />
 </p>
 
 <p align="center">
@@ -20,7 +20,7 @@
 ---
 
 ## Overview
-**MINI** is a clean, lightweight web app where users can write, publish, and read articles without the distractions of traditional platforms.
+**MINISPACE** is a clean, lightweight web app where users can write, publish, and read articles without the distractions of traditional platforms.
 
 ---
 
@@ -88,7 +88,7 @@ Feel free to fork, customize, and make it yours!
 ---
 
 ## Final Note
-MINI is intentionally small.  
+MINISPACE is intentionally small.  
 No endless features. No follower counts. No distractions.  
 Just pure reading and writing. ✍🏽
 

@@ -23,8 +23,8 @@ interface AuthContextType {
   user: User | null
   loading: boolean
   loggingOut: boolean
-  signup: (email: string, password: string, username: string) => Promise<{ success: boolean; error?: string }>
-  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>
+  signup: (email: string, password: string, username: string) => Promise<{ success: boolean; error?: string; redirect?: string }>
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string; redirect?: string }>
   logout: () => Promise<void>
   resetPassword: (email: string) => Promise<{ success: boolean; error?: string }>
   userData: UserData | null
@@ -178,19 +178,78 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
-     
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password)
-      const user = userCredential.user
+      // Check if username already exists in Users collection
+      const usernameRef = doc(db, "usernames", username);
+      const usernameDoc = await getDoc(usernameRef);
       
-
-      // Save user data to Firestore
-      await setDoc(doc(db, "Users", user.uid), {
-        username,
-        email,
-        createdAt: new Date(),
-      })
-
-      return { success: true }
+      if (usernameDoc.exists()) {
+        return {
+          success: false,
+          error: "Username already taken. Please choose a different username.",
+        };
+      }
+     
+      try {
+        // Create user with Firebase Auth
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password)
+        const user = userCredential.user
+        
+        try {
+          // Get the ID token for server-side authentication
+          const idToken = await user.getIdToken()
+          
+          // Send the ID token to our API to create a session cookie
+          console.log('Sending ID token to API for session creation...');
+          const response = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ idToken, redirect: `/${username}/dashboard` }),
+          })
+          
+          const data = await response.json()
+          
+          if (!response.ok) {
+            console.error('API response error:', data);
+            // If session creation fails, delete the user and throw an error
+            await user.delete();
+            throw new Error(data.error || data.details || 'Failed to create session')
+          }
+          
+          // Only save user data to Firestore if everything else succeeds
+          // Save user data to Firestore - use the existing 'Users' collection for MINISPACE
+          await setDoc(doc(db, "Users", user.uid), {
+            uid: user.uid,
+            username,
+            email,
+            displayName: username,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            enableBlog: true,
+            customDomain: null,
+          })
+          
+          // Reserve the username
+          await setDoc(doc(db, "usernames", username), {
+            uid: user.uid,
+          })
+          
+          return { success: true, redirect: data.redirect }
+        } catch (error) {
+          // If anything fails after user creation but before Firestore save,
+          // delete the user to ensure consistency
+          console.error('Error during signup process:', error);
+          await user.delete();
+          throw error;
+        }
+      } catch (error) {
+        // This catches errors from createUserWithEmailAndPassword
+        console.error('Error creating user:', error);
+        throw error;
+      }
+      
+      // This code is no longer needed as we return earlier
     } catch (error) {
       console.error("Signup error:", error)
       let errorMessage = "Failed to create account. Please try again."
@@ -229,8 +288,59 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
-      await signInWithEmailAndPassword(auth, email, password)
-      return { success: true }
+      // Sign in with Firebase Auth
+      const userCredential = await signInWithEmailAndPassword(auth, email, password)
+      
+      // Get the ID token for server-side authentication
+      const idToken = await userCredential.user.getIdToken()
+      
+      // Get the user data to determine username for dashboard redirect
+      const user = userCredential.user;
+      
+      // Fetch the user's data from Firestore to get the username
+      let username;
+      try {
+        const userDocRef = doc(db, "User", user.uid);
+        const userDoc = await getDoc(userDocRef);
+        
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          username = userData.username;
+          console.log('Found username from Firestore:', username);
+        }
+      } catch (error) {
+        console.error('Error fetching username from Firestore:', error);
+      }
+      
+      // Fallback to displayName or uid if username not found
+      if (!username) {
+        username = user.displayName || user.uid;
+        console.log('Using fallback username:', username);
+      }
+      
+      // Send the ID token to our API to create a session cookie
+      console.log('Sending ID token to API for login session creation...');
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          idToken,
+          redirect: `/${username}/dashboard` 
+        }),
+      })
+      
+      const data = await response.json()
+      
+      if (!response.ok) {
+        console.error('API login response error:', data);
+        throw new Error(data.error || data.details || 'Failed to create session')
+      }
+      
+      console.log('Login session created successfully');
+      
+      return { success: true, redirect: data.redirect }
     } catch (error) {
       console.error("Login error:", error)
       let errorMessage = "Failed to log in. Please check your credentials."
@@ -270,11 +380,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     try {
       setLoggingOut(true)
+      
+      // Sign out from Firebase Auth
       await signOut(auth)
+      
+      // Clear the session cookie on the server
+      await fetch('/api/auth/login', {
+        method: 'DELETE',
+      })
 
       // Wait for 2 seconds before redirecting
       setTimeout(() => {
-        router.push("/articles")
+        router.push("/discover")
         setLoggingOut(false)
       }, 2000)
     } catch (error) {

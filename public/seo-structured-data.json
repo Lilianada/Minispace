@@ -1,7 +1,7 @@
 {
   "@context": "https://schema.org",
   "@type": "WebSite",
-  "name": "MINI – Minimalist Reading & Writing Platform",
+  "name": "MINISPACE – Minimalist Reading & Writing Platform",
   "url": "https://mini.lilyslab.xyz/",
   "description": "A minimalist platform for reading and writing. Publish, read, and discover articles without the noise.",
   "image": "https://mini.lilyslab.xyz/logo.png",
