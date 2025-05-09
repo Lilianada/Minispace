@@ -23,7 +23,6 @@ export function ThemeSelector({
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center">
-          <Paintbrush className="mr-2 h-5 w-5" />
           Theme
         </CardTitle>
         <CardDescription>Choose a theme for your site</CardDescription>

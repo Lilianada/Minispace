@@ -268,16 +268,16 @@ export default function ProfilePage() {
         onShareProfile={shareProfile}
       />
       
-      <Separator />
+      {/* <Separator /> */}
       
       {/* Content Tabs */}
-      <ContentTabs 
+      {/* <ContentTabs 
         username={username}
         pages={pages} 
         posts={posts} 
-      />
+      /> */}
       
-      <Separator />
+      {/* <Separator /> */}
       
       {/* Social Links & Analytics */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

@@ -15,6 +15,9 @@ import { EditPageDialog } from "@/components/pages/edit-page-dialog"
 import { DeletePageDialog } from "@/components/pages/delete-page-dialog"
 import { SiteSettings } from "@/components/pages/site-settings"
 import DashboardShell from "@/components/dashboard/dashboard-shell"
+import { ThemeSelector } from "@/components/pages/theme-selector"
+import { SiteFont } from "@/components/pages/select-siteFont"
+import { BlogSettings, StylePreferences } from "@/lib/types"
 
 export default function PagesPage() {
   // Use the useParams hook to get the username parameter
@@ -23,13 +26,13 @@ export default function PagesPage() {
   const { user, userData } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
-  
+
   const [pages, setPages] = useState<Page[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [currentPage, setCurrentPage] = useState<Page | null>(null);
-  
+
   // Form states
   const [title, setTitle] = useState("");
   const [slug, setSlug] = useState("");
@@ -37,36 +40,47 @@ export default function PagesPage() {
   const [isHomePage, setIsHomePage] = useState(false);
   const [headerText, setHeaderText] = useState("");
   const [footerText, setFooterText] = useState("");
-  
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  // Theme selection state
+  const [selectedTheme, setSelectedTheme] = useState("default")
   // Dialog states
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  
+
+  const [stylePreferences, setStylePreferences] = useState<StylePreferences>({
+      fontFamily: "system-ui",
+      fontSize: "16px",
+      textColor: "#000000",
+      backgroundColor: "#ffffff",
+      accentColor: "#3b82f6"
+    })
+    
+
   useEffect(() => {
     if (!user) return;
-    
+
     const fetchPages = async () => {
       try {
         setIsLoading(true);
         // Use the nested collection structure: Users/{userId}/pages
         const pagesRef = collection(db, `Users/${user.uid}/pages`);
         const pagesQuery = query(pagesRef);
-        
+
         const querySnapshot = await getDocs(pagesQuery);
         const fetchedPages = querySnapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data()
         })) as Page[];
-        
+
         // Sort pages with home page first, then alphabetically
         fetchedPages.sort((a, b) => {
           if (a.isHomePage) return -1;
           if (b.isHomePage) return 1;
           return a.title.localeCompare(b.title);
         });
-        
+
         setPages(fetchedPages);
-        
+
         // Also fetch user settings for header/footer
         if (userData) {
           setHeaderText((userData as any)?.headerText || userData?.username || "");
@@ -83,13 +97,13 @@ export default function PagesPage() {
         setIsLoading(false);
       }
     };
-    
+
     fetchPages();
   }, [user, userData, toast]);
-  
+
   const handleEditPage = async () => {
     if (!user || !currentPage) return;
-    
+
     if (!title || !slug) {
       toast({
         title: "Missing fields",
@@ -98,7 +112,7 @@ export default function PagesPage() {
       });
       return;
     }
-    
+
     // Validate slug format (alphanumeric, hyphens, no spaces)
     if (!/^[a-z0-9-]+$/.test(slug)) {
       toast({
@@ -108,7 +122,7 @@ export default function PagesPage() {
       });
       return;
     }
-    
+
     // Check if slug already exists (excluding current page)
     const existingPage = pages.find(page => page.slug === slug && page.id !== currentPage.id);
     if (existingPage) {
@@ -119,10 +133,10 @@ export default function PagesPage() {
       });
       return;
     }
-    
+
     try {
       setIsEditing(true);
-      
+
       // If this is set as home page, update other pages
       if (isHomePage && !currentPage.isHomePage) {
         const homePages = pages.filter(page => page.isHomePage);
@@ -133,7 +147,7 @@ export default function PagesPage() {
           });
         }
       }
-      
+
       // Update page
       await updateDoc(doc(db, `Users/${user.uid}/pages`, currentPage.id), {
         title,
@@ -142,14 +156,14 @@ export default function PagesPage() {
         isHomePage: isHomePage || false, // Ensure isHomePage is never undefined
         updatedAt: serverTimestamp()
       });
-      
+
       // Update local state
       setPages(prev => {
         const updated = isHomePage && !currentPage.isHomePage
           ? prev.map(p => ({ ...p, isHomePage: p.id === currentPage.id }))
           : [...prev];
-        
-        return updated.map(page => 
+
+        return updated.map(page =>
           page.id === currentPage.id
             ? { ...page, title, slug, content, isHomePage, updatedAt: new Date() }
             : page
@@ -159,9 +173,9 @@ export default function PagesPage() {
           return a.title.localeCompare(b.title);
         });
       });
-      
+
       setShowEditDialog(false);
-      
+
       toast({
         title: "Page updated",
         description: "Your page has been updated successfully.",
@@ -177,10 +191,10 @@ export default function PagesPage() {
       setIsEditing(false);
     }
   };
-  
+
   const handleUpdateSiteSettings = async () => {
     if (!user) return;
-    
+
     try {
       setIsSaving(true);
       // Update user document with header and footer text
@@ -189,7 +203,7 @@ export default function PagesPage() {
         headerText,
         footerText
       });
-      
+
       toast({
         title: "Settings Updated",
         description: "Your site settings have been updated successfully.",
@@ -205,19 +219,19 @@ export default function PagesPage() {
       setIsSaving(false);
     }
   };
-  
+
   const handleDeletePage = async () => {
     if (!currentPage || !user) return;
-    
+
     try {
       await deleteDoc(doc(db, `Users/${user.uid}/pages`, currentPage.id));
-      
+
       // Update local state
       setPages(prev => prev.filter(page => page.id !== currentPage.id));
-      
+
       setShowDeleteDialog(false);
       setCurrentPage(null);
-      
+
       toast({
         title: "Page deleted",
         description: "Your page has been deleted successfully.",
@@ -231,7 +245,64 @@ export default function PagesPage() {
       });
     }
   };
-  
+
+
+
+  // Function to save theme selection
+  const saveThemeSelection = async () => {
+    if (!user) return;
+
+    try {
+      setIsSubmitting(true);
+
+      const userDoc = doc(db, `Users/${user.uid}`);
+      await updateDoc(userDoc, {
+        theme: selectedTheme,
+      });
+
+      toast({
+        title: "Theme saved",
+        description: "Your theme has been updated successfully.",
+      });
+    } catch (error) {
+      console.error("Error saving theme:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save theme. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+  // Function to save style preferences
+    const saveStylePreferences = async () => {
+      if (!user) return;
+      
+      try {
+        setIsSubmitting(true);
+        
+        const userDoc = doc(db, `Users/${user.uid}`);
+        await updateDoc(userDoc, {
+          stylePreferences,
+        });
+        
+        toast({
+          title: "Appearance saved",
+          description: "Your appearance settings have been updated successfully.",
+        });
+      } catch (error) {
+        console.error("Error saving style preferences:", error);
+        toast({
+          title: "Error",
+          description: "Failed to save appearance settings. Please try again.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsSubmitting(false);
+      }
+    };
+
   const openEditDialog = (page: Page) => {
     setCurrentPage(page);
     setTitle(page.title);
@@ -240,16 +311,16 @@ export default function PagesPage() {
     setIsHomePage(page.isHomePage);
     setShowEditDialog(true);
   };
-  
+
   const openDeleteDialog = (page: Page) => {
     setCurrentPage(page);
     setShowDeleteDialog(true);
   };
-  
+
   const navigateToCreatePage = () => {
     router.push(`/${username}/dashboard/pages/new`);
   };
-  
+
   return (
     <DashboardShell>
       <div className="container py-6 space-y-6">
@@ -260,7 +331,7 @@ export default function PagesPage() {
             Create Page
           </Button>
         </div>
-        
+
         <Tabs defaultValue="pages">
           <TabsList>
             <TabsTrigger value="pages">
@@ -272,7 +343,7 @@ export default function PagesPage() {
               Site Settings
             </TabsTrigger>
           </TabsList>
-          
+
           <TabsContent value="pages" className="space-y-4">
             <PageList
               pages={pages}
@@ -282,8 +353,8 @@ export default function PagesPage() {
               onDeletePage={openDeleteDialog}
             />
           </TabsContent>
-          
-          <TabsContent value="settings">
+
+          <TabsContent value="settings" className="space-y-4">
             <SiteSettings
               username={username}
               headerText={headerText}
@@ -293,9 +364,21 @@ export default function PagesPage() {
               onSave={handleUpdateSiteSettings}
               isSaving={isSaving}
             />
+            <SiteFont
+             fontFamily={stylePreferences.fontFamily || "system"}
+             setFontFamily={(fontFamily) => setStylePreferences({...stylePreferences, fontFamily})}
+             isSubmitting={isSubmitting}
+             onSave={saveStylePreferences}
+            />
+            <ThemeSelector
+              selectedTheme={selectedTheme}
+              setSelectedTheme={setSelectedTheme}
+              onSave={saveThemeSelection}
+              isSubmitting={isSubmitting}
+            />
           </TabsContent>
         </Tabs>
-        
+
         {/* Edit Page Dialog */}
         <EditPageDialog
           open={showEditDialog}
@@ -313,7 +396,7 @@ export default function PagesPage() {
           isHomePage={isHomePage}
           setIsHomePage={setIsHomePage}
         />
-        
+
         {/* Delete Page Dialog */}
         <DeletePageDialog
           open={showDeleteDialog}

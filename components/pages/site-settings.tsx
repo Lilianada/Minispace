@@ -64,7 +64,6 @@ export function SiteSettings({
         
         <div className="pt-2">
           <Button onClick={onSave} disabled={isSaving}>
-            <Save className="h-4 w-4 mr-2" />
             Save Site Settings
           </Button>
         </div>

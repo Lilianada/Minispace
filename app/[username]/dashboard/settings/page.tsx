@@ -6,8 +6,6 @@ import { doc, updateDoc, collection, query, where, getDocs } from "firebase/fire
 import { updateEmail, updatePassword, reauthenticateWithCredential, EmailAuthProvider, deleteUser } from "firebase/auth"
 import { db } from "@/lib/firebase"
 import { useAuth } from "@/lib/auth-context"
-import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
 import { useToast } from "@/components/ui/use-toast"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -16,10 +14,7 @@ import { BookOpen, Globe, Palette, Shield, User } from "lucide-react"
 // Import reusable components
 import { AccountSettings } from "@/components/settings/account-settings"
 import { PasswordSettings } from "@/components/settings/password-settings"
-import { BlogSettingsForm } from "@/components/settings/blog-settings-form"
-import { AppearanceSettings } from "@/components/settings/appearance-settings"
 import { DomainSettings } from "@/components/settings/domain-settings"
-import { ThemeSelector } from "@/components/settings/theme-selector"
 import { DeleteAccount } from "@/components/settings/delete-account"
 import { DataExport } from "@/components/settings/data-export"
 import DashboardShell from "@/components/dashboard/dashboard-shell"
@@ -340,91 +335,6 @@ export default function SettingsPage() {
     }
   };
   
-  // Function to save blog settings
-  const saveBlogSettings = async () => {
-    if (!user) return;
-    
-    try {
-      setIsSubmitting(true);
-      
-      const userDoc = doc(db, `Users/${user.uid}`);
-      await updateDoc(userDoc, {
-        enableBlog,
-        blogSettings,
-      });
-      
-      toast({
-        title: "Blog settings saved",
-        description: "Your blog settings have been updated successfully.",
-      });
-    } catch (error) {
-      console.error("Error saving blog settings:", error);
-      toast({
-        title: "Error",
-        description: "Failed to save blog settings. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-  
-  // Function to save style preferences
-  const saveStylePreferences = async () => {
-    if (!user) return;
-    
-    try {
-      setIsSubmitting(true);
-      
-      const userDoc = doc(db, `Users/${user.uid}`);
-      await updateDoc(userDoc, {
-        stylePreferences,
-      });
-      
-      toast({
-        title: "Appearance saved",
-        description: "Your appearance settings have been updated successfully.",
-      });
-    } catch (error) {
-      console.error("Error saving style preferences:", error);
-      toast({
-        title: "Error",
-        description: "Failed to save appearance settings. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-  
-  // Function to save theme selection
-  const saveThemeSelection = async () => {
-    if (!user) return;
-    
-    try {
-      setIsSubmitting(true);
-      
-      const userDoc = doc(db, `Users/${user.uid}`);
-      await updateDoc(userDoc, {
-        theme: selectedTheme,
-      });
-      
-      toast({
-        title: "Theme saved",
-        description: "Your theme has been updated successfully.",
-      });
-    } catch (error) {
-      console.error("Error saving theme:", error);
-      toast({
-        title: "Error",
-        description: "Failed to save theme. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-  
   // Function to verify custom domain
   const verifyCustomDomain = async () => {
     if (!user || !customDomain) return;
@@ -593,14 +503,10 @@ export default function SettingsPage() {
         <h1 className="text-3xl font-bold">Settings</h1>
         
         <Tabs defaultValue="account">
-          <TabsList className="grid grid-cols-5 w-full">
+          <TabsList className="grid grid-cols-4 w-full">
             <TabsTrigger value="account">
               <User className="h-4 w-4 mr-2" />
               Account
-            </TabsTrigger>
-            <TabsTrigger value="blog">
-              <BookOpen className="h-4 w-4 mr-2" />
-              Blog
             </TabsTrigger>
             <TabsTrigger value="appearance">
               <Palette className="h-4 w-4 mr-2" />
@@ -632,34 +538,6 @@ export default function SettingsPage() {
             />
           </TabsContent>
           
-          <TabsContent value="blog" className="space-y-6">
-            <BlogSettingsForm
-              blogSettings={blogSettings}
-              setBlogSettings={setBlogSettings}
-              enableBlog={enableBlog}
-              setEnableBlog={setEnableBlog}
-              onSave={saveBlogSettings}
-              isSubmitting={isSubmitting}
-            />
-          </TabsContent>
-          
-          <TabsContent value="appearance" className="space-y-6">
-            <AppearanceSettings
-              theme={selectedTheme}
-              setTheme={setSelectedTheme}
-              fontFamily={stylePreferences.fontFamily || "system"}
-              setFontFamily={(fontFamily) => setStylePreferences({...stylePreferences, fontFamily})}
-              isSubmitting={isSubmitting}
-              onSave={saveStylePreferences}
-            />
-            
-            <ThemeSelector
-              selectedTheme={selectedTheme}
-              setSelectedTheme={setSelectedTheme}
-              onSave={saveThemeSelection}
-              isSubmitting={isSubmitting}
-            />
-          </TabsContent>
           
           <TabsContent value="domain" className="space-y-6">
             <DomainSettings

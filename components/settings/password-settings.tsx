@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
-import { Key } from "lucide-react"
+import { Key, Lock } from "lucide-react"
 
 interface PasswordSettingsProps {
   currentPassword: string
@@ -33,7 +33,7 @@ export function PasswordSettings({
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center">
-          <Key className="mr-2 h-5 w-5" />
+          <Lock className="mr-2 h-5 w-5" />
           Change Password
         </CardTitle>
         <CardDescription>Update your account password</CardDescription>

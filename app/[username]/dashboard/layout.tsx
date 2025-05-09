@@ -37,7 +37,7 @@ export default async function DashboardLayout({
       {/* Content */}
       <main className="flex-1 flex flex-col border-x">
         <header className="sticky top-0 z-10 flex h-12 items-center gap-2 border-b bg-background px-3 lg:h-14 lg:px-4">
-          <div className="flex items-center gap-2 md:hidden">
+          <div className="flex items-center gap-2">
             <Link 
               href={`/${username}/dashboard`} 
               className="flex items-center gap-1 font-medium text-sm"
@@ -47,7 +47,7 @@ export default async function DashboardLayout({
           </div>
           <div className="ml-auto flex items-center gap-3">
             <div className="flex items-center">
-              <span className="text-xs text-muted-foreground mr-1">
+              <span className="text-sm capitalize text-muted-foreground mr-1">
                  {userData?.displayName || username}
               </span>
             </div>

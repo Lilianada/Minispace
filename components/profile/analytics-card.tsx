@@ -7,13 +7,13 @@ export function AnalyticsCard() {
   return (
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle className="text-lg font-medium">Analytics</CardTitle>
+        <CardTitle className="text-lg font-medium">Analytics <span className="text-xs text-blue-400">(coming soon)</span></CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="relative bg-muted/30 rounded-md p-4">
           <div className="text-center mb-4">
-            <p className="text-lg font-medium">Coming Soon</p>
-            <p className="text-sm text-muted-foreground">Analytics features will be available in the next update.</p>
+            {/* <p className="text-lg font-medium">Coming Soon</p> */}
+            <p className="text-sm text-muted-foreground">Available in future updates.</p>
           </div>
           
           <div className="grid grid-cols-2 gap-4">
