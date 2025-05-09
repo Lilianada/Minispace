@@ -91,14 +91,14 @@ export default function SignupPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!isFirebaseInitialized) {
-      console.error("Firebase is not initialized")
-      setErrors({
-        ...errors,
-        general: "System is initializing. Please try again in a moment.",
-      })
-      return
-    }
+    // if (!isFirebaseInitialized) {
+    //   console.error("Firebase is not initialized")
+    //   setErrors({
+    //     ...errors,
+    //     general: "System is initializing. Please try again in a moment.",
+    //   })
+    //   return
+    // }
 
     try {
       setIsLoading(true)
@@ -113,7 +113,14 @@ export default function SignupPage() {
       const result = await signup(email, password, username)
 
       if (result.success) {
-        router.push("/articles")
+        // Use the redirect URL returned from the auth context
+        // This will be the dashboard URL: /${username}/dashboard
+        if (result.redirect) {
+          router.push(result.redirect)
+        } else {
+          // Fallback to the dashboard if no redirect is provided
+          router.push(`/${username}/dashboard`)
+        }
       } else {
         console.error("Signup failed:", result.error)
         setErrors({
@@ -138,14 +145,14 @@ export default function SignupPage() {
         <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle className="text-2xl text-center">Sign Up</CardTitle>
-            <CardDescription className="text-center">Create your MINI account</CardDescription>
+            <CardDescription className="text-center">Create your MINISPACE account</CardDescription>
           </CardHeader>
           <CardContent>
-            {!isFirebaseInitialized && (
+            {/* {!isFirebaseInitialized && (
               <div className="mb-4 p-4 border rounded-md bg-amber-50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-200">
                 System is initializing. Please wait a moment.
               </div>
-            )}
+            )} */}
 
             {errors.general && (
               <div className="mb-4 p-4 border rounded-md bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-200">

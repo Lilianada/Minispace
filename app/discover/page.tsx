@@ -32,7 +32,7 @@ interface Article {
 const ARTICLES_PER_PAGE = 20
 const MAX_EXCERPT_LENGTH = 150 // Character limit for excerpts
 
-export default function ArticlesPage() {
+export default function DiscoverPage() {
   const [articles, setArticles] = useState<Article[]>([])
   const [loading, setLoading] = useState(true)
   const [lastVisible, setLastVisible] = useState<QueryDocumentSnapshot<DocumentData> | null>(null)
@@ -75,7 +75,7 @@ export default function ArticlesPage() {
   }
 
   const fetchArticles = useCallback(
-    async (searchTerm = "", tag = null, pageReset = false) => {
+    async (searchTerm = "", tag: string | null = null, pageReset = false) => {
       try {
         setLoading(true)
 
@@ -155,13 +155,22 @@ export default function ArticlesPage() {
 
           // Update total count
           await fetchArticleCount()
-        } catch (indexErr: any) {
+        } catch (indexErr) {
           console.error("Index error:", indexErr)
-
+          
+          // Type guard for Firebase error object
+          interface FirebaseError extends Error {
+            code?: string;
+            message: string;
+          }
+          
+          const err = indexErr as FirebaseError;
+          
           // If the error is about missing index
-          if (indexErr.code === "failed-precondition" && indexErr.message.includes("requires an index")) {
-            setIndexError(indexErr.message)
-            console.log("Create Firestore index at:", extractIndexUrl(indexErr.message))
+          if (err.code === "failed-precondition" && err.message.includes("requires an index")) {
+            setIndexError(err.message)
+            const indexUrl = extractIndexUrl(err.message)
+            console.log("Create Firestore index at:", indexUrl)
 
             // Try to fetch without ordering as a fallback
             const fallbackQuery = query(
@@ -299,7 +308,7 @@ export default function ArticlesPage() {
               <>
                 <div className="space-y-6 transition-all duration-500" style={{ opacity: loading ? 0.5 : 1 }}>
                   {articles.map((article) => (
-                    <Link href={`/articles/${article.id}`} key={article.id}>
+                    <Link href={`/discover/${article.id}`} key={article.id}>
                       <div className="py-4 px-2 rounded-md hover:bg-muted/50 transition-colors">
                         <div className="flex flex-wrap gap-2 items-center justify-start text-left">
                           <h2 className="text-base font-semibold">{article.title}</h2>

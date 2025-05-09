@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useToast } from "@/components/ui/use-toast"
 import { format } from "date-fns"
+import { IssueDialog } from "@/components/issue-dialog"
 
 interface Issue {
   id: string
@@ -101,21 +102,21 @@ export default function IssuesPage() {
   const handleResolveIssue = async (issueId: string) => {
     try {
       setResolvingId(issueId)
-      
+
       // Update the issue in Firestore
       await updateDoc(doc(db, "issues", issueId), {
         resolved: true,
         resolvedAt: new Date(),
         resolvedBy: user?.uid || "unknown"
       })
-      
+
       // Update the local state
-      setIssues(issues.map(issue => 
-        issue.id === issueId 
-          ? { ...issue, resolved: true } 
+      setIssues(issues.map(issue =>
+        issue.id === issueId
+          ? { ...issue, resolved: true }
           : issue
       ))
-      
+
       toast({
         title: "Issue Resolved",
         description: "The issue has been marked as resolved.",
@@ -136,12 +137,15 @@ export default function IssuesPage() {
     <>
       <Navbar />
       <div className="container mx-auto py-8 px-4 min-h-[calc(100vh-8rem)]">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Issues</h1>
-          <p className="text-muted-foreground">
-            View and manage all submitted issues.
-          </p>
-        </div>
+        <header className="flex justify-between items-start">
+          <div className="mb-8">
+            <h1 className="text-2xl font-bold mb-2">Issues</h1>
+            <p className="text-muted-foreground">
+              View all submitted issues.
+            </p>
+          </div>
+          <IssueDialog />
+        </header>
 
         {loading ? (
           <div className="space-y-4">
@@ -178,9 +182,9 @@ export default function IssuesPage() {
                               Resolved
                             </Badge>
                           ) : (
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
+                            <Button
+                              variant="outline"
+                              size="sm"
                               onClick={() => handleResolveIssue(issue.id)}
                               disabled={resolvingId === issue.id}
                             >
