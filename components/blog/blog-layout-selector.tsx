@@ -4,7 +4,6 @@ import { useState } from "react"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
 import { Check } from "lucide-react"
 
 export type BlogLayoutStyle = 'curator' | 'stream' | 'gallery' | 'magazine'
@@ -50,26 +49,38 @@ export function BlogLayoutSelector({ value, onChange }: BlogLayoutSelectorProps)
               <span className="text-sm font-medium">The Curator's Shelf</span>
               <Check className="h-4 w-4 text-primary hidden peer-data-[state=checked]:block [&:has([data-state=checked])]:block" />
             </div>
-            <Card className="w-full h-32 overflow-hidden">
+            <Card className="w-full h-48 overflow-hidden">
               <CardContent className="p-2">
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="bg-muted rounded-md h-12 flex items-center justify-center">
-                    <div className="w-10 h-2 bg-muted-foreground/30 rounded-full"></div>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="w-20 h-3 bg-muted-foreground/30 rounded-full"></div>
+                    <div className="w-16 h-3 bg-muted-foreground/20 rounded-full"></div>
                   </div>
-                  <div className="bg-muted rounded-md h-12 flex items-center justify-center">
-                    <div className="w-10 h-2 bg-muted-foreground/30 rounded-full"></div>
-                  </div>
-                  <div className="bg-muted rounded-md h-12 flex items-center justify-center">
-                    <div className="w-10 h-2 bg-muted-foreground/30 rounded-full"></div>
-                  </div>
-                  <div className="bg-muted rounded-md h-12 flex items-center justify-center">
-                    <div className="w-10 h-2 bg-muted-foreground/30 rounded-full"></div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="bg-muted rounded-md p-2 flex flex-col space-y-2">
+                      <div className="w-full h-10 bg-muted-foreground/10 rounded"></div>
+                      <div className="w-full h-3 bg-muted-foreground/20 rounded-full"></div>
+                      <div className="w-3/4 h-3 bg-muted-foreground/20 rounded-full"></div>
+                      <div className="flex space-x-1 mt-1">
+                        <div className="w-8 h-2 bg-primary/30 rounded-full"></div>
+                        <div className="w-8 h-2 bg-primary/30 rounded-full"></div>
+                      </div>
+                    </div>
+                    <div className="bg-muted rounded-md p-2 flex flex-col space-y-2">
+                      <div className="w-full h-10 bg-muted-foreground/10 rounded"></div>
+                      <div className="w-full h-3 bg-muted-foreground/20 rounded-full"></div>
+                      <div className="w-3/4 h-3 bg-muted-foreground/20 rounded-full"></div>
+                      <div className="flex space-x-1 mt-1">
+                        <div className="w-8 h-2 bg-primary/30 rounded-full"></div>
+                        <div className="w-8 h-2 bg-primary/30 rounded-full"></div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </CardContent>
             </Card>
             <p className="text-xs text-muted-foreground mt-2 text-center">
-              Resource Library Layout
+              Resource Library Layout with cards and category filtering
             </p>
           </Label>
         </div>
@@ -88,34 +99,47 @@ export function BlogLayoutSelector({ value, onChange }: BlogLayoutSelectorProps)
               <span className="text-sm font-medium">The Thought Stream</span>
               <Check className="h-4 w-4 text-primary hidden peer-data-[state=checked]:block [&:has([data-state=checked])]:block" />
             </div>
-            <Card className="w-full h-32 overflow-hidden">
+            <Card className="w-full h-48 overflow-hidden">
               <CardContent className="p-2">
                 <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <div className="w-24 h-2 bg-muted-foreground/30 rounded-full"></div>
-                    <div className="w-12 h-2 bg-muted-foreground/20 rounded-full"></div>
+                  <div className="flex items-center justify-between">
+                    <div className="w-20 h-3 bg-muted-foreground/40 rounded-full font-medium"></div>
+                    <div className="w-16 h-3 bg-muted-foreground/20 rounded-full"></div>
                   </div>
-                  <div className="flex justify-between items-center">
-                    <div className="w-32 h-2 bg-muted-foreground/30 rounded-full"></div>
-                    <div className="w-12 h-2 bg-muted-foreground/20 rounded-full"></div>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <div className="w-20 h-2 bg-muted-foreground/30 rounded-full"></div>
-                    <div className="w-12 h-2 bg-muted-foreground/20 rounded-full"></div>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <div className="w-28 h-2 bg-muted-foreground/30 rounded-full"></div>
-                    <div className="w-12 h-2 bg-muted-foreground/20 rounded-full"></div>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <div className="w-24 h-2 bg-muted-foreground/30 rounded-full"></div>
-                    <div className="w-12 h-2 bg-muted-foreground/20 rounded-full"></div>
+                  <div className="space-y-3">
+                    <div className="space-y-1">
+                      <div className="w-full h-3 bg-muted-foreground/30 rounded-full"></div>
+                      <div className="flex items-center space-x-1">
+                        <div className="w-3 h-3 rounded-full bg-muted-foreground/20"></div>
+                        <div className="w-16 h-2 bg-muted-foreground/20 rounded-full"></div>
+                        <div className="w-1 h-2 bg-muted-foreground/20 rounded-full mx-1"></div>
+                        <div className="w-12 h-2 bg-muted-foreground/20 rounded-full"></div>
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="w-full h-3 bg-muted-foreground/30 rounded-full"></div>
+                      <div className="flex items-center space-x-1">
+                        <div className="w-3 h-3 rounded-full bg-muted-foreground/20"></div>
+                        <div className="w-16 h-2 bg-muted-foreground/20 rounded-full"></div>
+                        <div className="w-1 h-2 bg-muted-foreground/20 rounded-full mx-1"></div>
+                        <div className="w-12 h-2 bg-muted-foreground/20 rounded-full"></div>
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="w-full h-3 bg-muted-foreground/30 rounded-full"></div>
+                      <div className="flex items-center space-x-1">
+                        <div className="w-3 h-3 rounded-full bg-muted-foreground/20"></div>
+                        <div className="w-16 h-2 bg-muted-foreground/20 rounded-full"></div>
+                        <div className="w-1 h-2 bg-muted-foreground/20 rounded-full mx-1"></div>
+                        <div className="w-12 h-2 bg-muted-foreground/20 rounded-full"></div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </CardContent>
             </Card>
             <p className="text-xs text-muted-foreground mt-2 text-center">
-              Notes & Reflections Timeline
+              Chronological Journal Style organized by year and month
             </p>
           </Label>
         </div>
@@ -134,30 +158,54 @@ export function BlogLayoutSelector({ value, onChange }: BlogLayoutSelectorProps)
               <span className="text-sm font-medium">The Inspiration Gallery</span>
               <Check className="h-4 w-4 text-primary hidden peer-data-[state=checked]:block [&:has([data-state=checked])]:block" />
             </div>
-            <Card className="w-full h-32 overflow-hidden">
+            <Card className="w-full h-48 overflow-hidden">
               <CardContent className="p-2">
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="bg-muted rounded-md p-2">
-                    <div className="w-full h-6 bg-muted-foreground/10 rounded mb-1"></div>
-                    <div className="w-1/2 h-2 bg-muted-foreground/30 rounded-full"></div>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="w-24 h-3 bg-muted-foreground/30 rounded-full"></div>
+                    <div className="flex space-x-1">
+                      <div className="w-8 h-3 bg-primary/30 rounded-full"></div>
+                      <div className="w-8 h-3 bg-primary/30 rounded-full"></div>
+                      <div className="w-8 h-3 bg-primary/30 rounded-full"></div>
+                    </div>
                   </div>
-                  <div className="bg-muted rounded-md p-2">
-                    <div className="w-full h-6 bg-muted-foreground/10 rounded mb-1"></div>
-                    <div className="w-1/2 h-2 bg-muted-foreground/30 rounded-full"></div>
-                  </div>
-                  <div className="bg-muted rounded-md p-2">
-                    <div className="w-full h-6 bg-muted-foreground/10 rounded mb-1"></div>
-                    <div className="w-1/2 h-2 bg-muted-foreground/30 rounded-full"></div>
-                  </div>
-                  <div className="bg-muted rounded-md p-2">
-                    <div className="w-full h-6 bg-muted-foreground/10 rounded mb-1"></div>
-                    <div className="w-1/2 h-2 bg-muted-foreground/30 rounded-full"></div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="bg-muted rounded-md p-2">
+                      <div className="flex items-center justify-between mb-1">
+                        <div className="flex items-center space-x-1">
+                          <div className="w-3 h-3 rounded-full bg-primary/30"></div>
+                          <div className="w-10 h-2 bg-muted-foreground/30 rounded-full"></div>
+                        </div>
+                        <div className="w-3 h-3 rounded-full bg-muted-foreground/20"></div>
+                      </div>
+                      <div className="w-full h-3 bg-muted-foreground/30 rounded-full mb-1"></div>
+                      <div className="w-3/4 h-2 bg-muted-foreground/20 rounded-full"></div>
+                      <div className="flex space-x-1 mt-1">
+                        <div className="w-6 h-2 bg-primary/30 rounded-full"></div>
+                        <div className="w-6 h-2 bg-primary/30 rounded-full"></div>
+                      </div>
+                    </div>
+                    <div className="bg-muted rounded-md p-2">
+                      <div className="flex items-center justify-between mb-1">
+                        <div className="flex items-center space-x-1">
+                          <div className="w-3 h-3 rounded-full bg-primary/30"></div>
+                          <div className="w-10 h-2 bg-muted-foreground/30 rounded-full"></div>
+                        </div>
+                        <div className="w-3 h-3 rounded-full bg-muted-foreground/20"></div>
+                      </div>
+                      <div className="w-full h-3 bg-muted-foreground/30 rounded-full mb-1"></div>
+                      <div className="w-3/4 h-2 bg-muted-foreground/20 rounded-full"></div>
+                      <div className="flex space-x-1 mt-1">
+                        <div className="w-6 h-2 bg-primary/30 rounded-full"></div>
+                        <div className="w-6 h-2 bg-primary/30 rounded-full"></div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </CardContent>
             </Card>
             <p className="text-xs text-muted-foreground mt-2 text-center">
-              Bookmarks & Discoveries Board
+              Bookmarks & Discoveries Board with content type filters
             </p>
           </Label>
         </div>
@@ -176,26 +224,52 @@ export function BlogLayoutSelector({ value, onChange }: BlogLayoutSelectorProps)
               <span className="text-sm font-medium">The Mini Magazine</span>
               <Check className="h-4 w-4 text-primary hidden peer-data-[state=checked]:block [&:has([data-state=checked])]:block" />
             </div>
-            <Card className="w-full h-32 overflow-hidden">
+            <Card className="w-full h-48 overflow-hidden">
               <CardContent className="p-2">
                 <div className="space-y-2">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-8 h-8 rounded-full bg-muted-foreground/20"></div>
-                    <div>
-                      <div className="w-16 h-2 bg-muted-foreground/30 rounded-full"></div>
-                      <div className="w-12 h-1.5 bg-muted-foreground/20 rounded-full mt-1"></div>
+                  <div className="flex justify-between items-center">
+                    <div className="w-16 h-3 bg-muted-foreground/40 rounded-full"></div>
+                    <div className="w-20 h-3 bg-muted-foreground/20 rounded-full"></div>
+                  </div>
+                  
+                  {/* Featured post */}
+                  <div className="flex space-x-2 p-2 bg-muted/30 rounded-md">
+                    <div className="w-16 h-16 bg-muted-foreground/10 rounded-md"></div>
+                    <div className="flex-1 space-y-1">
+                      <div className="w-12 h-2 bg-primary/30 rounded-full"></div>
+                      <div className="w-full h-3 bg-muted-foreground/30 rounded-full"></div>
+                      <div className="w-3/4 h-2 bg-muted-foreground/20 rounded-full"></div>
+                      <div className="flex items-center space-x-1">
+                        <div className="w-4 h-4 rounded-full bg-muted-foreground/20"></div>
+                        <div className="w-12 h-2 bg-muted-foreground/20 rounded-full"></div>
+                      </div>
                     </div>
                   </div>
-                  <div className="w-full h-12 bg-muted rounded-md"></div>
-                  <div className="flex justify-between">
-                    <div className="w-16 h-2 bg-muted-foreground/30 rounded-full"></div>
-                    <div className="w-8 h-2 bg-muted-foreground/20 rounded-full"></div>
+                  
+                  {/* Grid of posts */}
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="bg-muted rounded-md p-1">
+                      <div className="w-full h-6 bg-muted-foreground/10 rounded-md mb-1"></div>
+                      <div className="w-full h-2 bg-muted-foreground/20 rounded-full"></div>
+                      <div className="flex justify-between items-center mt-1">
+                        <div className="w-4 h-4 rounded-full bg-muted-foreground/20"></div>
+                        <div className="w-8 h-2 bg-muted-foreground/20 rounded-full"></div>
+                      </div>
+                    </div>
+                    <div className="bg-muted rounded-md p-1">
+                      <div className="w-full h-6 bg-muted-foreground/10 rounded-md mb-1"></div>
+                      <div className="w-full h-2 bg-muted-foreground/20 rounded-full"></div>
+                      <div className="flex justify-between items-center mt-1">
+                        <div className="w-4 h-4 rounded-full bg-muted-foreground/20"></div>
+                        <div className="w-8 h-2 bg-muted-foreground/20 rounded-full"></div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </CardContent>
             </Card>
             <p className="text-xs text-muted-foreground mt-2 text-center">
-              Article Feed with Author Highlights
+              Magazine style with featured post and article grid
             </p>
           </Label>
         </div>

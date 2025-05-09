@@ -227,7 +227,7 @@ export function SocialLinks({ socialLinks, userId, onSocialLinksChange }: Social
           {socialLinks.length === 0 ? (
             <p className="text-sm text-muted-foreground">No social links added yet.</p>
           ) : (
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid gap-3">
               {socialLinks.map((link, index) => (
                 <a
                   key={index}

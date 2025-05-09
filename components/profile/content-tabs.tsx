@@ -28,6 +28,12 @@ export interface Post {
   views?: number
   readingTime?: number
   tags?: string[]
+  category?: string
+  featuredImage?: string
+  isPublished?: boolean
+  visibility?: 'public' | 'private' | 'draft'
+  type?: 'article' | 'website' | 'video' | 'resource'
+  url?: string
 }
 
 interface ContentTabsProps {

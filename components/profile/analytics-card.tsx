@@ -10,15 +10,13 @@ export function AnalyticsCard() {
         <CardTitle className="text-lg font-medium">Analytics</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="relative">
-          <div className="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm z-10 rounded-md">
-            <div className="text-center p-4">
-              <p className="text-lg font-medium mb-2">Coming Soon</p>
-              <p className="text-sm text-muted-foreground">Analytics features will be available in the next update.</p>
-            </div>
+        <div className="relative bg-muted/30 rounded-md p-4">
+          <div className="text-center mb-4">
+            <p className="text-lg font-medium">Coming Soon</p>
+            <p className="text-sm text-muted-foreground">Analytics features will be available in the next update.</p>
           </div>
           
-          <div className="grid grid-cols-2 gap-4 opacity-40">
+          <div className="grid grid-cols-2 gap-4">
             <div>
               <p className="text-sm text-muted-foreground">Total Views</p>
               <p className="text-2xl font-bold">0</p>
@@ -29,9 +27,9 @@ export function AnalyticsCard() {
             </div>
           </div>
           
-          <Separator className="opacity-40 my-4" />
+          <Separator className="my-4" />
           
-          <div className="space-y-2 opacity-40">
+          <div className="space-y-2">
             <p className="text-sm font-medium">Traffic Sources</p>
             <div className="space-y-1">
               <div className="flex justify-between text-sm">

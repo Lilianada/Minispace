@@ -8,7 +8,8 @@ import {
   Settings, 
   FileText,
   AlertCircle,
-  LogOut
+  LogOut,
+  BookOpen
 } from "lucide-react"
 import { ModeToggle } from "./mode-toggle"
 import { SidebarTooltip } from "./sidebar-tooltip"
@@ -39,6 +40,12 @@ export function IconSidebar({ username }: SidebarProps) {
         <SidebarTooltip label="Pages">
           <Link href={`/${username}/dashboard/pages`} className="flex items-center justify-center w-10 h-10 rounded hover:bg-muted">
             <FileText className="w-4 h-4" />
+          </Link>
+        </SidebarTooltip>
+        
+        <SidebarTooltip label="Blog Settings">
+          <Link href={`/${username}/dashboard/blog/settings`} className="flex items-center justify-center w-10 h-10 rounded hover:bg-muted">
+            <BookOpen className="w-4 h-4" />
           </Link>
         </SidebarTooltip>
         
