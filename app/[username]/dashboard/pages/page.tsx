@@ -309,7 +309,7 @@ export default function PagesPage() {
       if (isHomePage && !currentPage.isHomePage) {
         const homePages = pages.filter(page => page.isHomePage);
         for (const homePage of homePages) {
-          await updateDoc(doc(db, "Pages", homePage.id), {
+          await updateDoc(doc(db, `Users/${user.uid}/pages`, homePage.id), {
             isHomePage: false,
             updatedAt: serverTimestamp()
           });
@@ -317,7 +317,7 @@ export default function PagesPage() {
       }
       
       // Update page
-      await updateDoc(doc(db, "Pages", currentPage.id), {
+      await updateDoc(doc(db, `Users/${user.uid}/pages`, currentPage.id), {
         title,
         slug,
         content,

@@ -8,6 +8,7 @@ import { useAuth } from '@/lib/auth-context'
 import ReactMarkdown from 'react-markdown'
 import { Card, CardContent } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
+import { getCachedData } from '@/lib/data-cache'
 
 export default function PageView() {
   const params = useParams()
@@ -23,47 +24,71 @@ export default function PageView() {
       try {
         setLoading(true)
         
-        // First, find the user by username
-        const usersQuery = query(collection(db, 'Users'), where('username', '==', username))
-        const userSnapshot = await getDocs(usersQuery)
-        
-        if (userSnapshot.empty) {
+        // Use data cache for user lookup
+        const userId = await getCachedData(
+          `user:${username}`,
+          async () => {
+            // Only run this if not in cache
+            const usersQuery = query(collection(db, 'Users'), where('username', '==', username))
+            const userSnapshot = await getDocs(usersQuery)
+            
+            if (userSnapshot.empty) {
+              throw new Error('User not found')
+            }
+            
+            return userSnapshot.docs[0].id
+          },
+          { expirationTimeMs: 30 * 60 * 1000 } // Cache user ID for 30 minutes
+        ).catch(err => {
           setError('User not found')
           setLoading(false)
-          return
-        }
+          throw err
+        })
         
-        const userId = userSnapshot.docs[0].id
+        if (!userId) return // Error was already handled
         
-        // Then, find the page by slug in the user's pages collection
-        const pagesQuery = query(
-          collection(db, `Users/${userId}/pages`), 
-          where('slug', '==', slug)
-        )
-        const pageSnapshot = await getDocs(pagesQuery)
-        
-        if (pageSnapshot.empty) {
+        // Use data cache for page content
+        const pageData = await getCachedData(
+          `page:${userId}:${slug}`,
+          async () => {
+            // Only run this if not in cache
+            const pagesQuery = query(
+              collection(db, `Users/${userId}/pages`), 
+              where('slug', '==', slug)
+            )
+            const pageSnapshot = await getDocs(pagesQuery)
+            
+            if (pageSnapshot.empty) {
+              throw new Error('Page not found')
+            }
+            
+            return {
+              id: pageSnapshot.docs[0].id,
+              ...pageSnapshot.docs[0].data()
+            }
+          },
+          { expirationTimeMs: 5 * 60 * 1000 } // Cache page content for 5 minutes
+        ).catch(err => {
           setError('Page not found')
           setLoading(false)
-          return
-        }
+          throw err
+        })
         
-        const pageData = {
-          id: pageSnapshot.docs[0].id,
-          ...pageSnapshot.docs[0].data()
-        }
+        if (!pageData) return // Error was already handled
         
         setPage(pageData)
         setLoading(false)
       } catch (err) {
         console.error('Error fetching page:', err)
-        setError('Failed to load page')
-        setLoading(false)
+        if (!error) { // Only set error if not already set
+          setError('Failed to load page')
+          setLoading(false)
+        }
       }
     }
     
     fetchPage()
-  }, [username, slug])
+  }, [username, slug, error])
   
   if (loading) {
     return (

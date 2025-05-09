@@ -1,233 +1,305 @@
 "use client"
 
-import { useRouter } from "next/navigation"
+import { useEffect, useState } from "react"
+import { useParams } from "next/navigation"
+import { collection, query, getDocs, doc, getDoc, updateDoc, serverTimestamp, orderBy } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 import { useAuth } from "@/lib/auth-context"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Eye, Edit, Mail, UserIcon, PenLineIcon, FileText, Palette, Settings } from "lucide-react"
-import Link from "next/link"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
-import { Skeleton } from "@/components/ui/skeleton"
+import { Separator } from "@/components/ui/separator"
 import { useToast } from "@/components/ui/use-toast"
 
-// Define quick action types
-interface QuickAction {
-  title: string
-  icon: React.ReactNode
-  href: string
-  description: string
-}
+// Import custom components
+import {
+  ProfileHeader,
+  SocialLinks,
+  ContentTabs,
+  AnalyticsCard,
+  ProfileEditDialog,
+  ProfileSkeleton
+} from "@/components/profile"
 
-export default function ProfilePage(props: { params: { username: string } }) {
-  // Access username directly from props to avoid Next.js warning
-  const { username } = props.params;
-  const { user, userData, loading } = useAuth();
+// Import types and constants from components
+import { SocialLink, SOCIAL_PLATFORMS } from "@/components/profile/social-links"
+import { Page, Post } from "@/components/profile/content-tabs"
+
+export default function ProfilePage() {
+  const params = useParams();
+  const username = params.username as string;
+  const { user } = useAuth();
   const { toast } = useToast();
-  const router = useRouter();
-
-  if (!user || loading) {
-    return (
-      <div className="space-y-4">
-        <div>
-          <Skeleton className="h-5 w-32 mb-1" />
-          <Skeleton className="h-4 w-48" />
-        </div>
+  
+  // State for user profile
+  const [loading, setLoading] = useState(true);
+  const [displayName, setDisplayName] = useState("");
+  const [bio, setBio] = useState("");
+  const [customDomain, setCustomDomain] = useState("");
+  const [socialLinks, setSocialLinks] = useState<SocialLink[]>([]);
+  const [pages, setPages] = useState<Page[]>([]);
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [joinDate, setJoinDate] = useState<Date | null>(null);
+  
+  // State for dialogs
+  const [profileDialogOpen, setProfileDialogOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  
+  // Fetch profile data on mount
+  useEffect(() => {
+    if (user) {
+      fetchProfileData();
+    }
+  }, [user]);
+  
+  // Fetch profile data from Firestore
+  const fetchProfileData = async () => {
+    try {
+      setLoading(true);
+      
+      // Fetch user profile
+      if (!user?.uid) return;
+      
+      const userDoc = await getDoc(doc(db, `Users/${user.uid}`));
+      
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        setDisplayName(userData.displayName || "");
+        setBio(userData.bio || "");
+        setCustomDomain(userData.customDomain || "");
         
-        <div className="grid gap-4 md:grid-cols-2">
-          <Card className="md:col-span-2">
-            <CardHeader className="py-3 px-4">
-              <Skeleton className="h-4 w-32" />
-            </CardHeader>
-            <CardContent className="py-2 px-4">
-              <div className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <Skeleton className="h-8 w-8 rounded-full" />
-                  <div>
-                    <Skeleton className="h-3 w-20 mb-1" />
-                    <Skeleton className="h-4 w-32" />
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Skeleton className="h-8 w-8 rounded-full" />
-                  <div>
-                    <Skeleton className="h-3 w-20 mb-1" />
-                    <Skeleton className="h-4 w-32" />
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="md:col-span-2">
-            <CardHeader className="py-3 px-4">
-              <Skeleton className="h-4 w-32" />
-            </CardHeader>
-            <CardContent className="py-2 px-4">
-              <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <Skeleton className="h-4 w-32 mb-1" />
-                    <Skeleton className="h-3 w-40" />
-                  </div>
-                  <Skeleton className="h-5 w-16 rounded-full" />
-                </div>
-                <div className="flex justify-between items-center">
-                  <div>
-                    <Skeleton className="h-4 w-32 mb-1" />
-                    <Skeleton className="h-3 w-40" />
-                  </div>
-                  <Skeleton className="h-7 w-20 rounded-md" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="md:col-span-2">
-            <CardHeader className="py-3 px-4">
-              <Skeleton className="h-4 w-32" />
-            </CardHeader>
-            <CardContent className="py-2 px-4">
-              <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
-                {[...Array(4)].map((_, i) => (
-                  <div key={i} className="border rounded-md p-3">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Skeleton className="h-4 w-4" />
-                      <Skeleton className="h-4 w-32" />
-                    </div>
-                    <Skeleton className="h-3 w-full" />
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    )
+        // Set join date if available
+        if (userData.createdAt) {
+          setJoinDate(userData.createdAt.toDate());
+        }
+        
+        // Process social links
+        const links: SocialLink[] = [];
+        if (userData.socialLinks) {
+          Object.entries(userData.socialLinks).forEach(([platform, username]) => {
+            if (username && typeof username === "string") {
+              // Create proper SocialLink objects with platform, url and icon
+              const platformKey = platform as keyof typeof SOCIAL_PLATFORMS;
+              const platformInfo = SOCIAL_PLATFORMS[platformKey] || SOCIAL_PLATFORMS.Custom;
+              
+              links.push({
+                platform,
+                url: username as string,
+                icon: platformInfo.icon,
+                prefix: platformInfo.prefix
+              });
+            }
+          });
+        }
+        setSocialLinks(links);
+      }
+      
+      // Fetch pages
+      const pagesQuery = query(
+        collection(db, `Users/${user.uid}/Pages`),
+        orderBy("createdAt", "desc")
+      );
+      
+      const pagesSnapshot = await getDocs(pagesQuery);
+      const pagesData: Page[] = [];
+      
+      pagesSnapshot.forEach((doc) => {
+        const data = doc.data();
+        pagesData.push({
+          id: doc.id,
+          title: data.title || "Untitled",
+          slug: data.slug || "",
+          content: data.content || "",
+          createdAt: data.createdAt?.toDate() || new Date(),
+          updatedAt: data.updatedAt?.toDate() || new Date(),
+          views: data.views || 0,
+          isHomePage: data.isHomePage || false
+        });
+      });
+      
+      setPages(pagesData);
+      
+      // Fetch posts
+      const postsQuery = query(
+        collection(db, `Users/${user.uid}/Posts`),
+        orderBy("createdAt", "desc")
+      );
+      
+      const postsSnapshot = await getDocs(postsQuery);
+      const postsData: Post[] = [];
+      
+      postsSnapshot.forEach((doc) => {
+        const data = doc.data();
+        postsData.push({
+          id: doc.id,
+          title: data.title || "Untitled",
+          slug: data.slug || "",
+          content: data.content || "",
+          excerpt: data.excerpt || "",
+          publishedAt: data.publishedAt?.toDate() || new Date(),
+          updatedAt: data.updatedAt?.toDate() || new Date(),
+          views: data.views || 0,
+          readingTime: data.readingTime || 0,
+          tags: data.tags || []
+        });
+      });
+      
+      setPosts(postsData);
+      
+    } catch (error) {
+      console.error("Error fetching profile data:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load profile data. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  // Handle profile update
+  const handleProfileUpdate = async (updatedName: string, updatedBio: string, updatedDomain: string) => {
+    if (!user?.uid) return;
+    
+    try {
+      setIsSaving(true);
+      
+      await updateDoc(doc(db, `Users/${user.uid}`), {
+        displayName: updatedName,
+        bio: updatedBio,
+        customDomain: updatedDomain,
+        updatedAt: serverTimestamp()
+      });
+      
+      setDisplayName(updatedName);
+      setBio(updatedBio);
+      setCustomDomain(updatedDomain);
+      
+      toast({
+        title: "Profile Updated",
+        description: "Your profile has been updated successfully."
+      });
+      
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update profile. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSaving(false);
+      setProfileDialogOpen(false);
+    }
+  };
+  
+  // Handle social links update
+  const handleSocialLinksUpdate = async (updatedLinks: SocialLink[]) => {
+    if (!user?.uid) return;
+    
+    try {
+      setIsSaving(true);
+      
+      // Convert array to object format for Firestore
+      const socialLinksObj: Record<string, string> = {};
+      updatedLinks.forEach(link => {
+        if (link.url.trim()) {
+          socialLinksObj[link.platform] = link.url.trim();
+        }
+      });
+      
+      await updateDoc(doc(db, `Users/${user.uid}`), {
+        socialLinks: socialLinksObj,
+        updatedAt: serverTimestamp()
+      });
+      
+      setSocialLinks(updatedLinks);
+      
+      toast({
+        title: "Social Links Updated",
+        description: "Your social links have been updated successfully."
+      });
+      
+    } catch (error) {
+      console.error("Error updating social links:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update social links. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+  
+  // Share profile function
+  const shareProfile = () => {
+    if (navigator.share) {
+      navigator.share({
+        title: `${displayName}'s Profile`,
+        text: `Check out ${displayName}'s profile on MINISPACE`,
+        url: `https://${username}.minispace.app`
+      }).catch(error => {
+        console.error("Error sharing profile:", error);
+      });
+    } else {
+      // Fallback for browsers that don't support the Web Share API
+      navigator.clipboard.writeText(`https://${username}.minispace.app`);
+      toast({
+        title: "URL Copied",
+        description: "Profile URL has been copied to clipboard"
+      });
+    }
+  };
+  
+  // Loading state
+  if (loading) {
+    return <ProfileSkeleton />;
   }
-
+  
   return (
-    <div className="space-y-4">
-      <div>
-        <h1 className="text-base font-bold tracking-tight">Profile</h1>
-        <p className="text-sm text-muted-foreground">
-          Manage your personal information
-        </p>
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card className="md:col-span-2">
-          <CardHeader className="py-3 px-4">
-            <CardTitle className="text-sm font-medium">Profile Information</CardTitle>
-          </CardHeader>
-          <CardContent className="py-2 px-4">
-            <div className="space-y-3">
-              <div className="flex items-center gap-3">
-                <div className="bg-muted rounded-full p-2">
-                  <UserIcon className="h-4 w-4 text-muted-foreground" />
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Username</p>
-                  <p className="text-sm font-medium">{userData?.username}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="bg-muted rounded-full p-2">
-                  <Mail className="h-4 w-4 text-muted-foreground" />
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Email</p>
-                  <p className="text-sm font-medium">{userData?.email}</p>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+    <div className="space-y-8 max-w-4xl mx-auto py-6">
+      {/* Profile Header */}
+      <ProfileHeader
+        displayName={displayName}
+        username={username}
+        bio={bio}
+        customDomain={customDomain}
+        joinDate={joinDate}
+        onEditProfile={() => setProfileDialogOpen(true)}
+        onShareProfile={shareProfile}
+      />
+      
+      <Separator />
+      
+      {/* Content Tabs */}
+      <ContentTabs 
+        username={username}
+        pages={pages} 
+        posts={posts} 
+      />
+      
+      <Separator />
+      
+      {/* Social Links & Analytics */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <SocialLinks 
+          socialLinks={socialLinks} 
+          userId={user?.uid || ""}
+          onSocialLinksChange={handleSocialLinksUpdate}
+        />
         
-        {/* Blog Settings */}
-        <Card className="md:col-span-2">
-          <CardHeader className="py-3 px-4 flex flex-row items-center justify-between">
-            <CardTitle className="text-sm font-medium">Blog Settings</CardTitle>
-            <Settings className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent className="py-2 px-4">
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-sm font-medium">Blog Status</h3>
-                  <p className="text-xs text-muted-foreground">Enable or disable your blog</p>
-                </div>
-                <Badge variant="secondary" className="text-xs">
-                  {(userData as any)?.enableBlog ? "Active" : "Inactive"}
-                </Badge>
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-sm font-medium">Custom Domain</h3>
-                  <p className="text-xs text-muted-foreground">{(userData as any)?.customDomain || "No custom domain set"}</p>
-                </div>
-                <Button asChild size="sm" variant="outline" className="h-7 px-2 text-xs">
-                  <Link href={`/${username}/dashboard/settings`}>
-                    <Edit className="h-3 w-3 mr-1" />
-                    Configure
-                  </Link>
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        {/* Quick Actions */}
-        <Card className="md:col-span-2">
-          <CardHeader className="py-3 px-4">
-            <CardTitle className="text-sm font-medium">Quick Actions</CardTitle>
-          </CardHeader>
-          <CardContent className="py-2 px-4">
-            <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
-              <Link href={`/${username}/dashboard/theme`} className="block">
-                <div className="border rounded-md p-3 hover:bg-muted/50 transition-colors">
-                  <div className="flex items-center gap-2 mb-1">
-                    <Palette className="h-4 w-4 text-muted-foreground" />
-                    <h3 className="text-sm font-medium">Customize Theme</h3>
-                  </div>
-                  <p className="text-xs text-muted-foreground">Change colors, fonts and layout</p>
-                </div>
-              </Link>
-              
-              <Link href={`/${username}/dashboard/posts`} className="block">
-                <div className="border rounded-md p-3 hover:bg-muted/50 transition-colors">
-                  <div className="flex items-center gap-2 mb-1">
-                    <FileText className="h-4 w-4 text-muted-foreground" />
-                    <h3 className="text-sm font-medium">Manage Posts</h3>
-                  </div>
-                  <p className="text-xs text-muted-foreground">Edit, publish or delete your posts</p>
-                </div>
-              </Link>
-              
-              <Link href={`/${username}/dashboard/write`} className="block">
-                <div className="border rounded-md p-3 hover:bg-muted/50 transition-colors">
-                  <div className="flex items-center gap-2 mb-1">
-                    <PenLineIcon className="h-4 w-4 text-muted-foreground" />
-                    <h3 className="text-sm font-medium">Write New Post</h3>
-                  </div>
-                  <p className="text-xs text-muted-foreground">Create a new blog post</p>
-                </div>
-              </Link>
-              
-              <Link href={`https://${username}.minispace.app`} target="_blank" className="block">
-                <div className="border rounded-md p-3 hover:bg-muted/50 transition-colors">
-                  <div className="flex items-center gap-2 mb-1">
-                    <Eye className="h-4 w-4 text-muted-foreground" />
-                    <h3 className="text-sm font-medium">View Blog</h3>
-                  </div>
-                  <p className="text-xs text-muted-foreground">See your blog as visitors see it</p>
-                </div>
-              </Link>
-            </div>
-          </CardContent>
-        </Card>
+        <AnalyticsCard />
       </div>
+      
+      {/* Profile Edit Dialog */}
+      <ProfileEditDialog
+        open={profileDialogOpen}
+        onOpenChange={setProfileDialogOpen}
+        displayName={displayName}
+        bio={bio}
+        customDomain={customDomain}
+        onSave={handleProfileUpdate}
+        // isSaving={isSaving}
+      />
     </div>
-  )
+  );
 }

@@ -6,6 +6,7 @@ import { collection, addDoc, serverTimestamp, doc, setDoc } from "firebase/fires
 import { db } from "@/lib/firebase"
 import { Page, ContentBlock, PageStyles } from "@/lib/types"
 import { MarkdownEditor } from "@/components/markdown-editor"
+import ReactMarkdown from "react-markdown"
 import { useAuth } from "@/lib/auth-context"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -274,12 +275,11 @@ export default function NewPagePage() {
       
       {showPreview ? (
         <div className="border rounded-md p-6 max-w-3xl mx-auto">
-          <div className="prose prose-sm dark:prose-invert max-w-none">
-            <h1>{title}</h1>
-            {/* Simple markdown rendering - in a real app, use a markdown parser */}
-            {content.split('\n\n').map((paragraph, i) => (
-              <p key={i}>{paragraph}</p>
-            ))}
+          <div className="prose prose-sm sm:prose lg:prose-lg dark:prose-invert max-w-none">
+            <h2 className="text-2xl font-bold mb-4">{title}</h2>
+            <ReactMarkdown>
+              {content}
+            </ReactMarkdown>
           </div>
         </div>
       ) : (
