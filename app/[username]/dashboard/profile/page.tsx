@@ -19,8 +19,9 @@ interface QuickAction {
   description: string
 }
 
-export default function ProfilePage({ params }: { params: { username: string } }) {
-  const { username } = params;
+export default function ProfilePage(props: { params: { username: string } }) {
+  // Access username directly from props to avoid Next.js warning
+  const { username } = props.params;
   const { user, userData, loading } = useAuth();
   const { toast } = useToast();
   const router = useRouter();

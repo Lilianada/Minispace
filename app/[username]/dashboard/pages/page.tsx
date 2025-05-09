@@ -29,8 +29,9 @@ interface Page {
   updatedAt: any
 }
 
-export default function PagesPage({ params }: { params: { username: string } }) {
-  const { username } = params;
+export default function PagesPage(props: { params: { username: string } }) {
+  // Access username directly from props to avoid Next.js warning
+  const { username } = props.params;
   const { user, userData, loading } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
@@ -50,7 +51,6 @@ export default function PagesPage({ params }: { params: { username: string } }) 
   const [footerText, setFooterText] = useState("");
   
   // Dialog states
-  const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   
@@ -186,7 +186,7 @@ export default function PagesPage({ params }: { params: { username: string } }) 
       setSlug("");
       setContent("");
       setIsHomePage(false);
-      setShowCreateDialog(false);
+    //   setShowCreateDialog(false);
       
       toast({
         title: "Page created",
@@ -360,12 +360,8 @@ export default function PagesPage({ params }: { params: { username: string } }) 
     setShowDeleteDialog(true);
   };
   
-  const openCreateDialog = () => {
-    setTitle("");
-    setSlug("");
-    setContent("");
-    setIsHomePage(false);
-    setShowCreateDialog(true);
+  const navigateToCreatePage = () => {
+    router.push(`/${username}/dashboard/pages/new`);
   };
   
   if (!user || loading) {
@@ -422,7 +418,7 @@ export default function PagesPage({ params }: { params: { username: string } }) 
         <p className="text-sm text-muted-foreground">
           {pages.length} {pages.length === 1 ? 'page' : 'pages'} total
         </p>
-        <Button size="sm" onClick={openCreateDialog}>
+        <Button size="sm" onClick={navigateToCreatePage}>
           <Plus className="h-3.5 w-3.5 mr-1" />
           <span className="text-xs">New Page</span>
         </Button>
@@ -461,7 +457,7 @@ export default function PagesPage({ params }: { params: { username: string } }) 
                 <p className="text-xs text-muted-foreground mb-4">
                   Create your first page to get started with your blog
                 </p>
-                <Button onClick={openCreateDialog}>
+                <Button onClick={navigateToCreatePage}>
                   Create Your First Page
                 </Button>
               </CardContent>
@@ -574,72 +570,7 @@ export default function PagesPage({ params }: { params: { username: string } }) 
         </TabsContent>
       </Tabs>
       
-      {/* Create Page Dialog */}
-      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Create New Page</DialogTitle>
-            <DialogDescription>
-              Add a new page to your blog
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4 py-2">
-            <div className="space-y-2">
-              <Label htmlFor="title">Page Title</Label>
-              <Input 
-                id="title" 
-                value={title} 
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="About Me"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="slug">URL Path</Label>
-              <div className="flex items-center gap-1">
-                <span className="text-sm text-muted-foreground">/</span>
-                <Input 
-                  id="slug" 
-                  value={slug} 
-                  onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/\s+/g, '-'))}
-                  placeholder="about"
-                />
-              </div>
-              <p className="text-xs text-muted-foreground">
-                This will be the URL path for your page: {username}.minispace.app/{slug || 'page-url'}
-              </p>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="content">Page Content</Label>
-              <Textarea 
-                id="content" 
-                value={content} 
-                onChange={(e) => setContent(e.target.value)}
-                placeholder="Write your page content here..."
-                rows={6}
-              />
-            </div>
-            
-            <div className="flex items-center space-x-2">
-              <Switch 
-                id="isHomePage" 
-                checked={isHomePage}
-                onCheckedChange={setIsHomePage}
-              />
-              <Label htmlFor="isHomePage">Set as home page</Label>
-            </div>
-          </div>
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowCreateDialog(false)}>Cancel</Button>
-            <Button onClick={handleCreatePage} disabled={isCreating}>
-              {isCreating ? 'Creating...' : 'Create Page'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Create Page Dialog removed - now using a separate page */}
       
       {/* Edit Page Dialog */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
