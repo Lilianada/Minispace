@@ -1,9 +1,11 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { collection, addDoc, serverTimestamp } from "firebase/firestore"
+import { useRouter, useParams } from "next/navigation"
+import { collection, addDoc, serverTimestamp, doc, setDoc } from "firebase/firestore"
 import { db } from "@/lib/firebase"
+import { Page, ContentBlock, PageStyles } from "@/lib/types"
+import { MarkdownEditor } from "@/components/markdown-editor"
 import { useAuth } from "@/lib/auth-context"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -21,7 +23,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar as CalendarComponent } from "@/components/ui/calendar"
 import { cn } from "@/lib/utils"
 
-interface PageMetadata {
+interface PageFormData {
   title: string
   slug: string
   alias: string
@@ -33,11 +35,17 @@ interface PageMetadata {
   language: string
   tags: string
   makeDiscoverable: boolean
+  backgroundColor: string
+  textColor: string
+  fontFamily: string
+  fontSize: string
+  layout: string
 }
 
-export default function NewPagePage(props: { params: { username: string } }) {
-  // Access username directly from props to avoid Next.js warning
-  const { username } = props.params
+export default function NewPagePage() {
+  // Use the useParams hook to get the username parameter
+  const params = useParams()
+  const username = params.username as string
   const { user, userData, loading } = useAuth()
   const router = useRouter()
   const { toast } = useToast()
@@ -49,7 +57,7 @@ export default function NewPagePage(props: { params: { username: string } }) {
   const [activeTab, setActiveTab] = useState("content")
   
   // Metadata states
-  const [metadata, setMetadata] = useState<PageMetadata>({
+  const [metadata, setMetadata] = useState<PageFormData>({
     title: "",
     slug: "",
     alias: "",
@@ -60,7 +68,12 @@ export default function NewPagePage(props: { params: { username: string } }) {
     metaImage: "",
     language: "en",
     tags: "",
-    makeDiscoverable: true
+    makeDiscoverable: true,
+    backgroundColor: "#ffffff",
+    textColor: "#000000",
+    fontFamily: "system-ui",
+    fontSize: "16px",
+    layout: "default"
   })
   
   // Preview state
@@ -97,7 +110,7 @@ export default function NewPagePage(props: { params: { username: string } }) {
     }
   }, [content, metadata.metaDescription])
   
-  const handleMetadataChange = (key: keyof PageMetadata, value: any) => {
+  const handleMetadataChange = (key: keyof PageFormData, value: any) => {
     setMetadata(prev => ({
       ...prev,
       [key]: value
@@ -133,27 +146,56 @@ export default function NewPagePage(props: { params: { username: string } }) {
         ? metadata.tags.split(',').map(tag => tag.trim()).filter(Boolean)
         : []
       
-      // Create page document
-      const pageData = {
+      // Create styles object
+      const styles: PageStyles = {
+        backgroundColor: metadata.backgroundColor,
+        textColor: metadata.textColor,
+        fontFamily: metadata.fontFamily,
+        fontSize: metadata.fontSize
+      }
+      
+      // Create page document in the User's pages subcollection
+      const userPagesCollection = collection(db, `Users/${user.uid}/pages`)
+      const pageDocRef = await addDoc(userPagesCollection, {
+        pageId: '', // Will be updated after we get the ID
         title,
-        content,
         slug: metadata.slug,
-        alias: metadata.alias || null,
+        isPublished: true,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        layout: metadata.layout,
+        styles,
+        seoDescription: metadata.metaDescription || null,
+        seoImage: metadata.metaImage || null,
         canonicalUrl: metadata.canonicalUrl || null,
-        publishedDate: metadata.publishedDate ? metadata.publishedDate : serverTimestamp(),
-        isPage: metadata.isPage,
-        metaDescription: metadata.metaDescription || null,
-        metaImage: metadata.metaImage || null,
+        isHomepage: false,
+        alias: metadata.alias || null,
         language: metadata.language || "en",
         tags: tagsArray,
         makeDiscoverable: metadata.makeDiscoverable,
-        authorId: user.uid,
-        username,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
-      }
+        isStaticPage: metadata.isPage
+      })
       
-      await addDoc(collection(db, "Pages"), pageData)
+      // Update the pageId field with the generated document ID
+      await setDoc(pageDocRef, { pageId: pageDocRef.id }, { merge: true })
+      
+      // Create the initial content block in the content subcollection
+      const contentBlocksCollection = collection(pageDocRef, 'content')
+      const contentBlockRef = await addDoc(contentBlocksCollection, {
+        blockId: '', // Will be updated after we get the ID
+        type: 'markdown',
+        content,
+        layoutType: 'column',
+        order: 0,
+        styles: {
+          padding: '1rem',
+          margin: '0',
+          backgroundColor: 'transparent'
+        }
+      })
+      
+      // Update the blockId field with the generated document ID
+      await setDoc(contentBlockRef, { blockId: contentBlockRef.id }, { merge: true })
       
       toast({
         title: "Page created",
@@ -197,7 +239,7 @@ export default function NewPagePage(props: { params: { username: string } }) {
   
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between mb-12">
         <div className="flex items-center gap-2">
           <Button asChild variant="ghost" size="sm" className="h-8 w-8 p-0">
             <Link href={`/${username}/dashboard/pages`}>
@@ -245,6 +287,7 @@ export default function NewPagePage(props: { params: { username: string } }) {
           <TabsList className="w-full">
             <TabsTrigger value="content" className="flex-1">Content</TabsTrigger>
             <TabsTrigger value="metadata" className="flex-1">Metadata</TabsTrigger>
+            <TabsTrigger value="styling" className="flex-1">Styling</TabsTrigger>
           </TabsList>
           
           <TabsContent value="content" className="space-y-4 pt-4">
@@ -260,23 +303,20 @@ export default function NewPagePage(props: { params: { username: string } }) {
             
             <div className="space-y-2">
               <Label htmlFor="content">Content (Markdown)</Label>
-              <Textarea
-                id="content"
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                placeholder="Write your page content here using Markdown..."
-                className="min-h-[300px] font-mono text-sm"
-              />
+                <MarkdownEditor 
+                  initialValue={content} 
+                  onChange={(value) => setContent(value)}
+                />
               <p className="text-xs text-muted-foreground">
                 You can use Markdown to format your content. 
-                <a 
-                  href="https://www.markdownguide.org/basic-syntax/" 
+                <Link 
+                  href="/docs/markdown" 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="underline ml-1"
                 >
-                  Learn more
-                </a>
+                  View Markdown Guide
+                </Link>
               </p>
             </div>
           </TabsContent>
@@ -449,6 +489,103 @@ export default function NewPagePage(props: { params: { username: string } }) {
                 <p className="text-xs text-muted-foreground ml-6">
                   Allow this page to appear in search engines and the MINISPACE discovery feed
                 </p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="styling" className="space-y-4 pt-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm font-medium">Page Styling</CardTitle>
+                <CardDescription className="text-xs">
+                  Customize the appearance of your page
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="layout">Layout Template</Label>
+                  <select
+                    id="layout"
+                    value={metadata.layout}
+                    onChange={(e) => handleMetadataChange("layout", e.target.value)}
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                  >
+                    <option value="default">Default</option>
+                    <option value="minimal">Minimal</option>
+                    <option value="centered">Centered</option>
+                    <option value="wide">Wide</option>
+                    <option value="sidebar">With Sidebar</option>
+                  </select>
+                  <p className="text-xs text-muted-foreground">
+                    Select a layout template for your page
+                  </p>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="backgroundColor">Background Color</Label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      id="backgroundColor"
+                      value={metadata.backgroundColor}
+                      onChange={(e) => handleMetadataChange("backgroundColor", e.target.value)}
+                      className="w-10 h-10 rounded-md border border-input"
+                    />
+                    <Input
+                      value={metadata.backgroundColor}
+                      onChange={(e) => handleMetadataChange("backgroundColor", e.target.value)}
+                      className="flex-1"
+                    />
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="textColor">Text Color</Label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      id="textColor"
+                      value={metadata.textColor}
+                      onChange={(e) => handleMetadataChange("textColor", e.target.value)}
+                      className="w-10 h-10 rounded-md border border-input"
+                    />
+                    <Input
+                      value={metadata.textColor}
+                      onChange={(e) => handleMetadataChange("textColor", e.target.value)}
+                      className="flex-1"
+                    />
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="fontFamily">Font Family</Label>
+                  <select
+                    id="fontFamily"
+                    value={metadata.fontFamily}
+                    onChange={(e) => handleMetadataChange("fontFamily", e.target.value)}
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                  >
+                    <option value="system-ui">System UI</option>
+                    <option value="serif">Serif</option>
+                    <option value="sans-serif">Sans Serif</option>
+                    <option value="monospace">Monospace</option>
+                  </select>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="fontSize">Font Size</Label>
+                  <select
+                    id="fontSize"
+                    value={metadata.fontSize}
+                    onChange={(e) => handleMetadataChange("fontSize", e.target.value)}
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                  >
+                    <option value="14px">Small (14px)</option>
+                    <option value="16px">Medium (16px)</option>
+                    <option value="18px">Large (18px)</option>
+                    <option value="20px">Extra Large (20px)</option>
+                  </select>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>

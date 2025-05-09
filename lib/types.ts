@@ -2,19 +2,30 @@
 export interface UserData {
   username: string;
   email: string;
-  enableBlog?: boolean;
-  customDomain?: string;
-  blogSettings?: BlogSettings;
+  uid: string;
+  enableBlog: boolean;
+  customDomain: string;
+  blogSettings: BlogSettings;
+  stylePreferences: StylePreferences;
+  theme: string;
 }
 
 export interface BlogSettings {
-  title?: string;
-  description?: string;
+  title: string;
+  description: string;
   footerText?: string;
   navStyle?: 'minimal' | 'standard' | 'expanded';
   showDates?: boolean;
   showTags?: boolean;
   defaultLayout?: string;
+}
+
+export interface StylePreferences {
+  fontFamily?: string;
+  fontSize?: string;
+  textColor?: string;
+  backgroundColor?: string;
+  accentColor?: string;
 }
 
 // Page types

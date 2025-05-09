@@ -5,13 +5,22 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent } from '@/components/ui/card'
 import ReactMarkdown from 'react-markdown'
+import 'tailwindcss/tailwind.css'
 
 interface MarkdownEditorProps {
   initialValue?: string
+  onChange?: (value: string) => void
 }
 
-export function MarkdownEditor({ initialValue = '# Hello MINISPACE\n\nStart typing your markdown here...' }: MarkdownEditorProps) {
+export function MarkdownEditor({ initialValue = '# Hello MINISPACE\n\nStart typing your markdown here...', onChange }: MarkdownEditorProps) {
   const [markdown, setMarkdown] = useState(initialValue)
+  
+  const handleChange = (value: string) => {
+    setMarkdown(value)
+    if (onChange) {
+      onChange(value)
+    }
+  }
 
   return (
     <Tabs defaultValue="edit" className="w-full">
@@ -25,15 +34,17 @@ export function MarkdownEditor({ initialValue = '# Hello MINISPACE\n\nStart typi
         <Textarea
           className="min-h-[300px] font-mono text-sm"
           value={markdown}
-          onChange={(e) => setMarkdown(e.target.value)}
+          onChange={(e) => handleChange(e.target.value)}
           placeholder="Type your markdown here..."
         />
       </TabsContent>
       
       <TabsContent value="preview" className="mt-0">
         <Card>
-          <CardContent className="prose dark:prose-invert max-w-none p-4">
-            <ReactMarkdown>{markdown}</ReactMarkdown>
+          <CardContent className="prose prose-sm sm:prose dark:prose-invert max-w-none p-4 overflow-auto">
+            <ReactMarkdown>
+              {markdown}
+            </ReactMarkdown>
           </CardContent>
         </Card>
       </TabsContent>
@@ -43,12 +54,14 @@ export function MarkdownEditor({ initialValue = '# Hello MINISPACE\n\nStart typi
           <Textarea
             className="min-h-[300px] font-mono text-sm"
             value={markdown}
-            onChange={(e) => setMarkdown(e.target.value)}
+            onChange={(e) => handleChange(e.target.value)}
             placeholder="Type your markdown here..."
           />
           <Card>
-            <CardContent className="prose dark:prose-invert max-w-none p-4 min-h-[300px]">
-              <ReactMarkdown>{markdown}</ReactMarkdown>
+            <CardContent className="prose prose-sm sm:prose dark:prose-invert max-w-none p-4 min-h-[300px] overflow-auto">
+              <ReactMarkdown>
+                {markdown}
+              </ReactMarkdown>
             </CardContent>
           </Card>
         </div>

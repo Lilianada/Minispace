@@ -13,44 +13,46 @@ export default function DocsLayout({
 }) {
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl">
-      <div className="flex flex-col md:flex-row gap-6">
-        {/* Sidebar Navigation */}
-        <aside className="w-full md:w-64 shrink-0">
+      <div className="space-y-6">
+        {/* Horizontal Navigation */}
+        <div className="w-full">
           <Card>
             <CardContent className="p-4">
-              <h2 className="text-lg font-semibold mb-4">Documentation</h2>
-              <nav className="space-y-1">
-                <Link 
-                  href="/docs/markdown" 
-                  className="block px-3 py-2 rounded-md hover:bg-muted transition-colors"
-                >
-                  Markdown Guide
-                </Link>
-                <Link 
-                  href="/docs/pages" 
-                  className="block px-3 py-2 rounded-md hover:bg-muted transition-colors opacity-50"
-                >
-                  Page Structure
-                </Link>
-                <Link 
-                  href="/docs/themes" 
-                  className="block px-3 py-2 rounded-md hover:bg-muted transition-colors opacity-50"
-                >
-                  Themes & Styling
-                </Link>
-                <Link 
-                  href="/docs/api" 
-                  className="block px-3 py-2 rounded-md hover:bg-muted transition-colors opacity-50"
-                >
-                  API Reference
-                </Link>
-              </nav>
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                <h2 className="text-lg font-semibold">Documentation</h2>
+                <nav className="flex flex-wrap gap-2">
+                  <Link 
+                    href="/docs/markdown" 
+                    className="px-3 py-2 rounded-md hover:bg-muted transition-colors text-sm font-medium"
+                  >
+                    Markdown Guide
+                  </Link>
+                  <Link 
+                    href="/docs/pages" 
+                    className="px-3 py-2 rounded-md hover:bg-muted transition-colors text-sm font-medium opacity-50"
+                  >
+                    Page Structure
+                  </Link>
+                  <Link 
+                    href="/docs/themes" 
+                    className="px-3 py-2 rounded-md hover:bg-muted transition-colors text-sm font-medium opacity-50"
+                  >
+                    Themes & Styling
+                  </Link>
+                  <Link 
+                    href="/docs/api" 
+                    className="px-3 py-2 rounded-md hover:bg-muted transition-colors text-sm font-medium opacity-50"
+                  >
+                    API Reference
+                  </Link>
+                </nav>
+              </div>
             </CardContent>
           </Card>
-        </aside>
+        </div>
 
         {/* Main Content */}
-        <main className="flex-1">
+        <main className="w-full">
           {children}
         </main>
       </div>

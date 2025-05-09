@@ -37,9 +37,9 @@ export default function DocsPage() {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">MINISPACE Documentation</h1>
+        <h1 className="text-xl font-bold mb-2">MINISPACE Documentation</h1>
         <p className="text-muted-foreground">
-          Everything you need to know about creating and managing your lightweight blog.
+          Everything you need to know about creating and managing your personal mini space on the web.
         </p>
       </div>
 

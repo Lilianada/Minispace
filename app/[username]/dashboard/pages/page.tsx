@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useParams } from "next/navigation"
 import { collection, query, where, getDocs, doc, deleteDoc, updateDoc, addDoc, serverTimestamp } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 import { useAuth } from "@/lib/auth-context"
@@ -29,9 +29,10 @@ interface Page {
   updatedAt: any
 }
 
-export default function PagesPage(props: { params: { username: string } }) {
-  // Access username directly from props to avoid Next.js warning
-  const { username } = props.params;
+export default function PagesPage() {
+  // Use the useParams hook to get the username parameter
+  const params = useParams();
+  const username = params.username as string;
   const { user, userData, loading } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
@@ -60,11 +61,9 @@ export default function PagesPage(props: { params: { username: string } }) {
     const fetchPages = async () => {
       try {
         setIsLoading(true);
-        const pagesRef = collection(db, "Pages");
-        const pagesQuery = query(
-          pagesRef,
-          where("authorId", "==", user.uid)
-        );
+        // Use the nested collection structure: Users/{userId}/pages
+        const pagesRef = collection(db, `Users/${user.uid}/pages`);
+        const pagesQuery = query(pagesRef);
         
         const querySnapshot = await getDocs(pagesQuery);
         const fetchedPages = querySnapshot.docs.map(doc => ({
@@ -102,6 +101,8 @@ export default function PagesPage(props: { params: { username: string } }) {
   }, [user, userData, toast]);
   
   const handleCreatePage = async () => {
+    if (!user) return;
+    
     if (!title || !slug) {
       toast({
         title: "Missing fields",
@@ -139,44 +140,108 @@ export default function PagesPage(props: { params: { username: string } }) {
       if (isHomePage) {
         const homePages = pages.filter(page => page.isHomePage);
         for (const homePage of homePages) {
-          await updateDoc(doc(db, "Pages", homePage.id), {
-            isHomePage: false,
+          await updateDoc(doc(db, `Users/${user.uid}/pages`, homePage.id), {
+            isHomepage: false, // Note: using isHomepage to match the field name in the data model
             updatedAt: serverTimestamp()
           });
         }
       }
       
-      // Create new page
-      const newPage = {
+      // Create new page in the user's pages subcollection
+      const userPagesCollection = collection(db, `Users/${user.uid}/pages`);
+      const pageData = {
+        pageId: '', // Will be updated after we get the ID
         title,
         slug,
-        content,
-        isHomePage,
-        authorId: user?.uid,
-        username,
+        isPublished: true,
         createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
+        updatedAt: serverTimestamp(),
+        layout: 'default',
+        styles: {
+          backgroundColor: '#ffffff',
+          textColor: '#000000',
+          fontFamily: 'system-ui',
+          fontSize: '16px'
+        },
+        seoDescription: '',
+        isHomepage: isHomePage,
+        tags: [],
+        makeDiscoverable: true
       };
       
-      const docRef = await addDoc(collection(db, "Pages"), newPage);
+      const pageDocRef = await addDoc(userPagesCollection, pageData);
+      
+      // Update the pageId field with the generated document ID
+      await updateDoc(pageDocRef, { pageId: pageDocRef.id });
+      
+      // Create initial content block
+      const contentBlocksCollection = collection(pageDocRef, 'content');
+      const contentBlockRef = await addDoc(contentBlocksCollection, {
+        blockId: '',
+        type: 'markdown',
+        content: content || 'Add your content here...',
+        layoutType: 'column',
+        order: 0,
+        styles: {
+          padding: '1rem',
+          margin: '0',
+          backgroundColor: 'transparent'
+        }
+      });
+      
+      // Update the blockId field
+      await updateDoc(contentBlockRef, { blockId: contentBlockRef.id });
+      
+      // Update user document to include blog settings if not already present
+      const userDocRef = doc(db, 'Users', user.uid);
+      
+      // Create blog settings object
+      const blogSettings = {
+        enableBlog: true,
+        blogSettings: {
+          title: userData?.blogSettings?.title || title,
+          description: userData?.blogSettings?.description || '',
+          footerText: userData?.blogSettings?.footerText || '© ' + new Date().getFullYear() + ' ' + username,
+          navStyle: userData?.blogSettings?.navStyle || 'minimal',
+          showDates: userData?.blogSettings?.showDates !== undefined ? userData.blogSettings.showDates : true,
+          showTags: userData?.blogSettings?.showTags !== undefined ? userData.blogSettings.showTags : true,
+          defaultLayout: userData?.blogSettings?.defaultLayout || 'default'
+        }
+      };
+      
+      await updateDoc(userDocRef, blogSettings);
       
       // Update local state
       setPages(prev => {
         const updated = isHomePage 
-          ? prev.map(p => ({ ...p, isHomePage: false })) 
+          ? prev.map(p => ({ ...p, isHomepage: false })) 
           : [...prev];
         
         return [
           ...updated, 
           { 
-            id: docRef.id, 
-            ...newPage, 
+            id: pageDocRef.id, 
+            pageId: pageDocRef.id,
+            title,
+            slug,
+            isPublished: true,
             createdAt: new Date(), 
-            updatedAt: new Date() 
+            updatedAt: new Date(),
+            layout: 'default',
+            styles: {
+              backgroundColor: '#ffffff',
+              textColor: '#000000',
+              fontFamily: 'system-ui',
+              fontSize: '16px'
+            },
+            seoDescription: '',
+            isHomepage: isHomePage,
+            tags: [],
+            makeDiscoverable: true
           }
         ].sort((a, b) => {
-          if (a.isHomePage) return -1;
-          if (b.isHomePage) return 1;
+          if (a.isHomepage) return -1;
+          if (b.isHomepage) return 1;
           return a.title.localeCompare(b.title);
         });
       });
@@ -256,7 +321,7 @@ export default function PagesPage(props: { params: { username: string } }) {
         title,
         slug,
         content,
-        isHomePage,
+        isHomePage: isHomePage || false, // Ensure isHomePage is never undefined
         updatedAt: serverTimestamp()
       });
       
@@ -482,7 +547,11 @@ export default function PagesPage(props: { params: { username: string } }) {
                   </CardHeader>
                   <CardContent className="py-2 px-4">
                     <p className="text-xs text-muted-foreground line-clamp-2">
-                      {page.content ? page.content.substring(0, 100) + (page.content.length > 100 ? '...' : '') : 'No content'}
+                      {page.content ? 
+                        // Strip markdown syntax for preview
+                        page.content.replace(/[#*`_~\[\]()]/g, '').substring(0, 100) + 
+                        (page.content.length > 100 ? '...' : '') 
+                        : 'No content'}
                     </p>
                   </CardContent>
                   <CardFooter className="py-2 px-4 border-t flex justify-between">
