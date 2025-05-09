@@ -29,7 +29,7 @@ export function FirebaseSetupGuide() {
         <DialogHeader>
           <DialogTitle>Firebase Setup Guide</DialogTitle>
           <DialogDescription>
-            Follow these steps to properly set up Firebase for your MINI application
+            Follow these steps to properly set up Firebase for your MINISPACE application
           </DialogDescription>
         </DialogHeader>
 

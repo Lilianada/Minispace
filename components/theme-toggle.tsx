@@ -5,7 +5,11 @@ import { useTheme } from "next-themes"
 import { Sun, Moon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
-export function ThemeToggle() {
+interface ThemeToggleProps {
+  text?: string;
+}
+
+export function ThemeToggle({ text }: ThemeToggleProps = {}) {
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = React.useState(false)
 
@@ -26,12 +30,13 @@ export function ThemeToggle() {
   return (
     <Button
       variant="ghost"
-      size="icon"
+      size={text ? "sm" : "icon"}
       aria-label={label}
       onClick={() => setTheme(nextTheme)}
-      className="transition-colors block w-fit"
+      className="transition-colors block w-fit flex items-center gap-2"
     >
       <Icon className="h-5 w-5" />
+      {text && <span>{text}</span>}
     </Button>
   )
 }
