@@ -1,104 +1,192 @@
 import * as admin from 'firebase-admin';
 
+// Track if we've already initialized Firebase Admin
+let isInitialized = false;
+let firebaseAdmin: admin.app.App | undefined;
+
 /**
  * Initialize Firebase Admin SDK
  * This function ensures we only initialize Firebase Admin once
  */
-function initializeFirebaseAdmin() {
+function initializeFirebaseAdmin(): admin.app.App | undefined {
   // Check if Firebase Admin is already initialized
   if (admin.apps.length > 0) {
     console.log('Firebase Admin already initialized, using existing instance');
-    return admin;
+    return admin.app();
   }
-  
-  console.log('Initializing Firebase Admin...');
-  
+
   try {
-    // Get the Firebase configuration from environment variables
-    const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
-    const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-    const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
-    
-    if (projectId && clientEmail && privateKey) {
-      // Initialize with service account credentials
-      console.log('Using service account credentials from environment variables');
-      // Create the config object with required fields
-      const adminConfig: any = {
-        credential: admin.credential.cert({
-          projectId,
-          clientEmail,
-          privateKey,
-        })
-      };
-      
-      // Add databaseURL only if it exists
-      if (process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL) {
-        adminConfig.databaseURL = process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL;
-      }
-      
-      // Initialize with the config
-      admin.initializeApp(adminConfig);
-      console.log('Firebase Admin initialized with service account credentials');
-    } else if (process.env.FIREBASE_ADMIN_CREDENTIALS) {
-      console.log('Using FIREBASE_ADMIN_CREDENTIALS from environment');
-      try {
-        // Initialize with credentials JSON
-        const serviceAccount = JSON.parse(
-          Buffer.from(process.env.FIREBASE_ADMIN_CREDENTIALS, 'base64').toString()
-        );
-        
-        // Create the config object with required fields
-        const adminConfig: any = {
-          credential: admin.credential.cert(serviceAccount as any)
-        };
-        
-        // Add databaseURL only if it exists
-        if (process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL) {
-          adminConfig.databaseURL = process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL;
-        }
-        
-        // Initialize with the config
-        admin.initializeApp(adminConfig);
-        console.log('Firebase Admin initialized with service account credentials');
-      } catch (error) {
-        console.error('Error initializing Firebase Admin with credentials:', error);
-        // Fallback to application default credentials
-        initializeWithProjectId();
-      }
-    } else {
-      // For development, initialize with project ID
-      initializeWithProjectId();
+    // Try to get existing app if it exists
+    try {
+      const existingApp = admin.app();
+      isInitialized = true;
+      return existingApp;
+    } catch (e) {
+      // No existing app, continue with initialization
+    }
+
+    // Initialize with credentials if available
+    if (initializeWithCredentials()) {
+      isInitialized = true;
+      return admin.app();
     }
     
-    return admin;
+    // Fall back to project ID only initialization
+    if (initializeWithProjectId()) {
+      isInitialized = true;
+      return admin.app();
+    }
+    
+    // Last resort - initialize with empty config
+    console.log('Initializing Firebase Admin with default empty config');
+    admin.initializeApp();
+    isInitialized = true;
+    return admin.app();
   } catch (error) {
-    console.error('Error in initializeFirebaseAdmin:', error);
-    throw error;
+    console.error('Failed to initialize Firebase Admin:', error);
+    return undefined;
   }
 }
 
-// Helper function to initialize Firebase Admin with just the project ID
-function initializeWithProjectId() {
-  const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
-  
-  console.log('No credentials provided, initializing with project ID:', projectId);
-  
-  // Initialize with the project ID at minimum
-  admin.initializeApp({
-    projectId: projectId || 'minispace-app-dev',
-  });
-  
-  console.log('Firebase Admin initialized with project ID only');
+/**
+ * Attempts to initialize Firebase Admin with available credentials
+ * @returns boolean indicating if initialization was successful
+ */
+function initializeWithCredentials(): boolean {
+  try {
+    // Check for application default credentials
+    if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+      console.log('Using GOOGLE_APPLICATION_CREDENTIALS from environment');
+      admin.initializeApp({
+        credential: admin.credential.applicationDefault()
+      });
+      console.log('Firebase Admin initialized with application default credentials');
+      return true;
+    }
+    
+    // Check for direct service account JSON
+    if (process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
+      console.log('Using FIREBASE_SERVICE_ACCOUNT_KEY from environment');
+      const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
+      admin.initializeApp({
+        credential: admin.credential.cert(serviceAccount)
+      });
+      console.log('Firebase Admin initialized with service account JSON');
+      return true;
+    }
+    
+    // Check for credentials in various formats
+    if (process.env.FIREBASE_ADMIN_CREDENTIALS) {
+      console.log('Using FIREBASE_ADMIN_CREDENTIALS from environment');
+      
+      // Handle credentials based on format
+      const config = createConfigFromCredentials(process.env.FIREBASE_ADMIN_CREDENTIALS);
+      if (config) {
+        admin.initializeApp(config);
+        console.log('Firebase Admin initialized with credentials');
+        return true;
+      }
+    }
+    
+    return false;
+  } catch (error) {
+    console.error('Error initializing with credentials:', error);
+    return false;
+  }
 }
 
-// Initialize Firebase Admin on module load
-const firebaseAdmin = initializeFirebaseAdmin();
+/**
+ * Creates Firebase config from credentials in various formats
+ */
+function createConfigFromCredentials(credentials: string): admin.AppOptions | null {
+  try {
+    let serviceAccount: any;
+    
+    // Handle JSON string format
+    if (credentials.trim().startsWith('{')) {
+      serviceAccount = JSON.parse(credentials);
+    }
+    // Handle PEM format (private key)
+    else if (credentials.includes('-----BEGIN PRIVATE KEY-----')) {
+      console.log('Detected PEM format private key');
+      const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'mini-app-00';
+      const clientEmail = process.env.FIREBASE_ADMIN_CLIENT_EMAIL || 
+                         `firebase-adminsdk@${projectId}.iam.gserviceaccount.com`;
+      
+      // Store key in environment variable instead of file
+      process.env.FIREBASE_PRIVATE_KEY = credentials;
+      
+      serviceAccount = {
+        projectId,
+        privateKey: credentials,
+        clientEmail
+      };
+    }
+    // Try base64 decoding
+    else {
+      try {
+        const decoded = Buffer.from(credentials, 'base64').toString();
+        serviceAccount = JSON.parse(decoded);
+      } catch (e) {
+        console.error('Failed to parse credentials as base64 JSON');
+        return null;
+      }
+    }
+    
+    // Create config object
+    const config: admin.AppOptions = {
+      credential: admin.credential.cert(serviceAccount)
+    };
+    
+    // Add database URL if available
+    if (process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL) {
+      config.databaseURL = process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL;
+    }
+    
+    return config;
+  } catch (error) {
+    console.error('Error creating config from credentials:', error);
+    return null;
+  }
+}
 
-// Export the admin app instance
+/**
+ * Initializes Firebase Admin with just the project ID
+ * @returns boolean indicating if initialization was successful
+ */
+function initializeWithProjectId(): boolean {
+  try {
+    const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'mini-app-00';
+    console.log(`Initializing with project ID: ${projectId}`);
+    
+    admin.initializeApp({ projectId });
+    console.log('Firebase Admin initialized with project ID only');
+    return true;
+  } catch (error) {
+    console.error('Error initializing with project ID:', error);
+    return false;
+  }
+}
+
+/**
+ * Gets the Firebase Admin app, initializing it if necessary
+ */
+export function getFirebaseAdminApp(): admin.app.App {
+  const app = initializeFirebaseAdmin();
+  if (!app) {
+    throw new Error('Failed to initialize Firebase Admin');
+  }
+  return app;
+}
+
+/**
+ * Exports the admin services for use in the application
+ */
 export const getAdminApp = () => {
+  const app = getFirebaseAdminApp();
   return {
-    auth: firebaseAdmin.auth(),
-    db: firebaseAdmin.firestore(),
+    auth: app.auth(),
+    db: app.firestore(),
   };
 };
 

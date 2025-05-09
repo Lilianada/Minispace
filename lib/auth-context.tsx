@@ -18,6 +18,14 @@ import { doc, setDoc, getDoc } from "firebase/firestore"
 import { auth, db } from "./firebase"
 import { useToast } from "@/components/ui/use-toast"
 import { useRouter } from "next/navigation"
+import {
+  saveUserToStorage,
+  saveSessionToStorage,
+  getUserFromStorage,
+  isAuthenticatedFromStorage,
+  clearAuthFromStorage,
+  extendSession
+} from "./auth-storage"
 
 interface AuthContextType {
   user: User | null
@@ -89,6 +97,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
+  // Initialize state from local storage first to improve performance
+  useEffect(() => {
+    // Check if we have cached authentication data
+    const isAuthenticated = isAuthenticatedFromStorage();
+    const storedUser = getUserFromStorage();
+    
+    if (isAuthenticated && storedUser) {
+      // Use cached data first for faster initial render
+      setUserData({
+        username: storedUser.username,
+        email: storedUser.email
+      });
+      // We'll still verify with Firebase, but the UI can render immediately
+    }
+    
+    // Reduce loading state faster if we have cached data
+    if (!auth || isAuthenticated) {
+      setLoading(false);
+    }
+  }, []);
+
   // Set up auth state listener
   useEffect(() => {
     if (!auth) {
@@ -104,7 +133,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const unsubscribe = onAuthStateChanged(
       auth,
       async (user) => {
-     
         setUser(user)
 
         if (user && db) {
@@ -117,25 +145,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               const userData = userDoc.data() as UserData
               setUserData(userData)
               
+              // Save to local storage for faster future access
+              saveUserToStorage({
+                ...userData,
+                uid: user.uid
+              });
+              saveSessionToStorage(true);
+              extendSession(24); // Extend session for 24 hours
 
-              // Show welcome message based on time of day
-              const hour = new Date().getHours()
-              let greeting = "Hello"
+              // Only show welcome message if this isn't from a cached session
+              const storedUser = getUserFromStorage();
+              if (!storedUser || (storedUser && Date.now() - storedUser.lastUpdated > 1000 * 60 * 10)) { // Only if last update was more than 10 minutes ago
+                // Show welcome message based on time of day
+                const hour = new Date().getHours()
+                let greeting = "Hello"
 
-              if (hour < 12) greeting = "Good morning"
-              else if (hour < 18) greeting = "Good afternoon"
-              else greeting = "Good evening"
+                if (hour < 12) greeting = "Good morning"
+                else if (hour < 18) greeting = "Good afternoon"
+                else greeting = "Good evening"
 
-              toast({
-                title: `${greeting}, ${userData.username}!`,
-                description:
-                  hour < 12
-                    ? "Start your day with a great read."
-                    : hour < 18
-                      ? "Take a break with some interesting articles."
-                      : "Unwind with some reading or writing.",
-                duration: 5000,
-              })
+                toast({
+                  title: `${greeting}, ${userData.username}!`,
+                  description:
+                    hour < 12
+                      ? "Start your day with a great read."
+                      : hour < 18
+                        ? "Take a break with some interesting articles."
+                        : "Unwind with some reading or writing.",
+                  duration: 5000,
+                })
+              }
             } else {
               console.warn("User document does not exist for authenticated user")
             }
@@ -381,6 +420,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       setLoggingOut(true)
       
+      // Clear local storage first for immediate UI response
+      clearAuthFromStorage()
+      
       // Sign out from Firebase Auth
       await signOut(auth)
       
@@ -389,11 +431,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         method: 'DELETE',
       })
 
-      // Wait for 2 seconds before redirecting
+      // Reset state
+      setUser(null)
+      setUserData(null)
+
+      // Wait for 1 second before redirecting (reduced from 2 seconds for better UX)
       setTimeout(() => {
         router.push("/discover")
         setLoggingOut(false)
-      }, 2000)
+      }, 1000)
     } catch (error) {
       console.error("Logout error:", error)
       setLoggingOut(false)
