@@ -9,7 +9,7 @@ import { useAuth } from "@/lib/auth-context"
 import { useToast } from "@/components/ui/use-toast"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Skeleton } from "@/components/ui/skeleton"
-import { BookOpen, Globe, Palette, Shield, User } from "lucide-react"
+import { BookOpen, Globe, Layout, Shield, User } from "lucide-react"
 
 // Import reusable components
 import { AccountSettings } from "@/components/settings/account-settings"
@@ -17,8 +17,9 @@ import { PasswordSettings } from "@/components/settings/password-settings"
 import { DomainSettings } from "@/components/settings/domain-settings"
 import { DeleteAccount } from "@/components/settings/delete-account"
 import { DataExport } from "@/components/settings/data-export"
+import { SiteSettings } from "@/components/pages/site-settings"
 import DashboardShell from "@/components/dashboard/dashboard-shell"
-import { BlogSettings, StylePreferences } from "@/lib/types"
+import { BlogSettings, StylePreferences, UserData } from "@/lib/types"
 
 export default function SettingsPage() {
   // Get username from URL params
@@ -27,6 +28,8 @@ export default function SettingsPage() {
   
   // Auth and router
   const { user, userData, logout, loading } = useAuth();
+  // Explicitly type userData to match the UserData interface
+  const typedUserData = userData as UserData;
   const router = useRouter();
   const { toast } = useToast();
   
@@ -54,6 +57,12 @@ export default function SettingsPage() {
     defaultLayout: "default"
   })
   
+  // Site settings state
+  const [headerText, setHeaderText] = useState("")
+  const [footerText, setFooterText] = useState("")
+  const [selectedTheme, setSelectedTheme] = useState("classic-columnist")
+  const [fontFamily, setFontFamily] = useState("inter")
+  
   // Domain settings state
   const [customDomain, setCustomDomain] = useState("")
   const [isVerified, setIsVerified] = useState(false)
@@ -67,9 +76,6 @@ export default function SettingsPage() {
     backgroundColor: "#ffffff",
     accentColor: "#3b82f6"
   })
-  
-  // Theme selection state
-  const [selectedTheme, setSelectedTheme] = useState("default")
 
   useEffect(() => {
     if (!loading && !user) {
@@ -77,44 +83,51 @@ export default function SettingsPage() {
       return;
     }
 
-    if (userData) {
+    if (typedUserData) {
       // Load account settings
-      setUsername(userData.username)
-      setEmail(userData.email)
+      setUsername(typedUserData.username)
+      setEmail(typedUserData.email)
       
       // Load blog settings
-      setEnableBlog(userData.enableBlog ?? true)
-      if (userData.blogSettings) {
+      setEnableBlog(typedUserData.enableBlog ?? true)
+      if (typedUserData.blogSettings) {
         setBlogSettings({
-          title: userData.blogSettings.title || userData.username,
-          description: userData.blogSettings.description || "",
-          footerText: userData.blogSettings.footerText || `© ${new Date().getFullYear()} ${userData.username}`,
-          navStyle: userData.blogSettings.navStyle || "minimal",
-          showDates: userData.blogSettings.showDates ?? true,
-          showTags: userData.blogSettings.showTags ?? true,
-          defaultLayout: userData.blogSettings.defaultLayout || "default"
+          title: typedUserData.blogSettings.title || typedUserData.username,
+          description: typedUserData.blogSettings.description || "",
+          footerText: typedUserData.blogSettings.footerText || `© ${new Date().getFullYear()} ${typedUserData.username}`,
+          navStyle: typedUserData.blogSettings.navStyle || "minimal",
+          showDates: typedUserData.blogSettings.showDates ?? true,
+          showTags: typedUserData.blogSettings.showTags ?? true,
+          defaultLayout: typedUserData.blogSettings.defaultLayout || "default"
         })
+        
+        // Load site settings from blog settings
+        setHeaderText(typedUserData.blogSettings.title || typedUserData.username)
+        setFooterText(typedUserData.blogSettings.footerText || `© ${new Date().getFullYear()} ${typedUserData.username}`)
       }
       
       // Load domain settings
-      setCustomDomain(userData.customDomain || "")
-      setIsVerified(!!userData.customDomain)
+      setCustomDomain(typedUserData.customDomain || "")
+      setIsVerified(!!typedUserData.customDomain)
       
       // Load style preferences
-      if (userData.stylePreferences) {
+      if (typedUserData.stylePreferences) {
         setStylePreferences({
-          fontFamily: userData.stylePreferences.fontFamily || "system-ui",
-          fontSize: userData.stylePreferences.fontSize || "16px",
-          textColor: userData.stylePreferences.textColor || "#000000",
-          backgroundColor: userData.stylePreferences.backgroundColor || "#ffffff",
-          accentColor: userData.stylePreferences.accentColor || "#3b82f6"
+          fontFamily: typedUserData.stylePreferences.fontFamily || "system-ui",
+          fontSize: typedUserData.stylePreferences.fontSize || "16px",
+          textColor: typedUserData.stylePreferences.textColor || "#000000",
+          backgroundColor: typedUserData.stylePreferences.backgroundColor || "#ffffff",
+          accentColor: typedUserData.stylePreferences.accentColor || "#3b82f6"
         })
+        
+        // Load font family for site settings
+        setFontFamily(typedUserData.stylePreferences.fontFamily || "inter")
       }
       
       // Load theme selection
-      setSelectedTheme(userData.theme || "default")
+      setSelectedTheme(typedUserData.theme || "classic-columnist")
     }
-  }, [user, userData, router, loading])
+  }, [user, userData, typedUserData, router, loading])
 
   const handleUpdateProfile = async () => {
     if (!user) return;
@@ -412,6 +425,84 @@ export default function SettingsPage() {
     }
   };
   
+  // Function to update blog settings
+  const handleUpdateBlogSettings = async () => {
+    if (!user) return;
+    
+    try {
+      setIsSubmitting(true);
+      
+      // Update blog settings in Firestore
+      const userRef = doc(db, "User", user.uid);
+      await updateDoc(userRef, {
+        enableBlog,
+        blogSettings
+      });
+      
+      toast({
+        title: "Blog settings updated",
+        description: "Your blog settings have been saved successfully.",
+      });
+    } catch (error) {
+      console.error("Error updating blog settings:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update blog settings. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+  
+  // Function to update site settings
+  const handleUpdateSiteSettings = async () => {
+    if (!user) return;
+    
+    try {
+      setIsSubmitting(true);
+      
+      // Update blog settings with header and footer text
+      const updatedBlogSettings = {
+        ...blogSettings,
+        title: headerText,
+        footerText: footerText
+      };
+      
+      // Update style preferences with font family
+      const updatedStylePreferences = {
+        ...stylePreferences,
+        fontFamily: fontFamily
+      };
+      
+      // Update Firestore document
+      const userRef = doc(db, "User", user.uid);
+      await updateDoc(userRef, {
+        blogSettings: updatedBlogSettings,
+        stylePreferences: updatedStylePreferences,
+        theme: selectedTheme
+      });
+      
+      // Update local state
+      setBlogSettings(updatedBlogSettings);
+      setStylePreferences(updatedStylePreferences);
+      
+      toast({
+        title: "Site settings updated",
+        description: "Your site appearance and content settings have been saved successfully.",
+      });
+    } catch (error) {
+      console.error("Error updating site settings:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update site settings. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+  
   // Function to export user data
   const exportUserData = async () => {
     if (!user) return;
@@ -508,9 +599,9 @@ export default function SettingsPage() {
               <User className="h-4 w-4 mr-2" />
               Account
             </TabsTrigger>
-            <TabsTrigger value="appearance">
-              <Palette className="h-4 w-4 mr-2" />
-              Appearance
+            <TabsTrigger value="site">
+              <Layout className="h-4 w-4 mr-2" />
+              Site
             </TabsTrigger>
             <TabsTrigger value="domain">
               <Globe className="h-4 w-4 mr-2" />
@@ -535,6 +626,22 @@ export default function SettingsPage() {
             <DataExport
               onExport={exportUserData}
               isExporting={isExporting}
+            />
+          </TabsContent>
+          
+          <TabsContent value="site" className="space-y-6">
+            <SiteSettings
+              username={username}
+              headerText={headerText}
+              setHeaderText={setHeaderText}
+              footerText={footerText}
+              setFooterText={setFooterText}
+              selectedTheme={selectedTheme}
+              setSelectedTheme={setSelectedTheme}
+              fontFamily={fontFamily}
+              setFontFamily={setFontFamily}
+              onSave={handleUpdateSiteSettings}
+              isSaving={isSubmitting}
             />
           </TabsContent>
           
