@@ -12,7 +12,7 @@ function serializeUserData(userData: any): any {
   
   // Use JSON.parse(JSON.stringify()) to strip methods and convert to plain objects
   // But first we need to handle Timestamps manually
-  const preparedData = {};
+  const preparedData: Record<string, any> = {};
   
   // Convert all fields to simple values
   Object.keys(userData).forEach(key => {
@@ -24,7 +24,7 @@ function serializeUserData(userData: any): any {
     } 
     // Handle nested objects that might contain Timestamps
     else if (value && typeof value === 'object' && !Array.isArray(value)) {
-      const nestedObj = {};
+      const nestedObj: Record<string, any> = {};
       Object.keys(value).forEach(nestedKey => {
         const nestedValue = value[nestedKey];
         if (nestedValue && typeof nestedValue === 'object' && 'toDate' in nestedValue && typeof nestedValue.toDate === 'function') {
@@ -94,7 +94,6 @@ export async function getAuthenticatedUser(username: string, noRedirect = false)
   
   // In development mode, we'll still verify the user exists
   if (process.env.NODE_ENV === 'development') {
-    console.log('Development mode: Using username from URL');
     // We'll try to find a user with this username in the User collection
     try {
       // Query the User collection by username
@@ -106,10 +105,8 @@ export async function getAuthenticatedUser(username: string, noRedirect = false)
         // User found by username
         const userDoc = querySnapshot.docs[0];
         userId = userDoc.id;
-        console.log('Found user by username:', username, 'with ID:', userId);
       } else {
         // For development, we'll use the username as the userId if not found
-        console.log('User not found by username, using username as userId for development');
         userId = username;
       }
     } catch (error) {
@@ -215,11 +212,7 @@ export async function getAuthenticatedUser(username: string, noRedirect = false)
       }
     }
     
-    // This code is unreachable but needed for TypeScript
-    return {
-      userId,
-      userData: null,
-    };
+    // Return is handled in the try block above
   } catch (error) {
     console.error('Error fetching user data:', error);
     if (!noRedirect) {

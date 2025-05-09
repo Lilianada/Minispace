@@ -300,7 +300,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Fetch the user's data from Firestore to get the username
       let username;
       try {
-        const userDocRef = doc(db, "User", user.uid);
+        const userDocRef = doc(db, "Users", user.uid);
         const userDoc = await getDoc(userDocRef);
         
         if (userDoc.exists()) {
