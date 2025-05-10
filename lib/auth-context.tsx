@@ -61,6 +61,8 @@ const AuthContext = createContext<AuthContextType>({
 export const useAuth = () => useContext(AuthContext)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [sessionChecked, setSessionChecked] = useState(false);
+
   const [user, setUser] = useState<User | null>(null)
   const [userData, setUserData] = useState<UserData | null>(null)
   const [loading, setLoading] = useState(true)
@@ -96,6 +98,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return () => clearInterval(interval)
     }
   }, [])
+
+  // Hydrate auth state from server session cookie on mount
+  useEffect(() => {
+    const checkSession = async () => {
+      try {
+        const res = await fetch('/api/auth/me');
+        if (res.ok) {
+          const userData = await res.json();
+          setUserData(userData);
+          setUser(userData.firebaseUser || null);
+        } else {
+          setUser(null);
+          setUserData(null);
+        }
+      } catch {
+        setUser(null);
+        setUserData(null);
+      } finally {
+        setSessionChecked(true);
+        setLoading(false);
+      }
+    };
+    checkSession();
+  }, []);
 
   // Initialize state from local storage first to improve performance
   useEffect(() => {
@@ -497,5 +523,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isFirebaseInitialized,
   }
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+  if (!sessionChecked) {
+    return (
+      <div className="container mx-auto py-8 px-4 min-h-[calc(100vh-8rem)]">
+      <div className="flex justify-center items-center m-auto h-screen my-12">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    </div>
+    );
+  }
+
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        loading,
+        loggingOut,
+        signup,
+        login,
+        logout,
+        resetPassword,
+        userData,
+        checkEmailExists,
+        isFirebaseInitialized,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  )
 }

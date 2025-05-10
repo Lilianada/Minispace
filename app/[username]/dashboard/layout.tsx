@@ -35,7 +35,7 @@ export default async function DashboardLayout({
       <Sidebar username={username}/>
       
       {/* Content */}
-      <main className="flex-1 flex flex-col border-x">
+      <main className="flex-1 flex flex-col border-x border-border">
         <header className="sticky top-0 z-10 flex h-12 items-center gap-2 border-b bg-background px-3 lg:h-14 lg:px-4">
           <div className="flex items-center gap-2">
             <Link 

@@ -48,7 +48,7 @@ export default function RootLayout({
                 }
               },
               "sameAs": [
-                "https://twitter.com/minispace_app",
+                "https://twitter.com/minispace_dev",
                 "https://github.com/Lilianada/minispace"
               ]
             })
@@ -60,7 +60,7 @@ export default function RootLayout({
         <AuthProvider>
           <ThemeProvider attribute="class" defaultTheme="dark" themes={['dark']} enableSystem={false} disableTransitionOnChange>
             <div className=" max-w-4xl mx-auto w-full flex relative min-h-screen">
-            <main className="flex-1 flex flex-col border-x">
+            <main className="flex-1 flex flex-col border-x border-border">
               {children}
               </main>
             </div>

@@ -23,6 +23,7 @@ interface PageListProps {
   username: string
   onEditPage: (page: Page) => void
   onDeletePage: (page: Page) => void
+  onSetHomePage: (page: Page) => void
 }
 
 export function PageList({ 
@@ -30,7 +31,8 @@ export function PageList({
   isLoading, 
   username, 
   onEditPage, 
-  onDeletePage 
+  onDeletePage, 
+  onSetHomePage 
 }: PageListProps) {
   if (isLoading) {
     return (
@@ -93,12 +95,20 @@ export function PageList({
                     <Edit className="h-3.5 w-3.5 mr-1" />
                     Edit
                   </Button>
-                  
                   {!page.isHomePage && (
                     <Button size="sm" variant="outline" onClick={() => onDeletePage(page)}>
                       <Trash2 className="h-3.5 w-3.5 mr-1" />
                       Delete
                     </Button>
+                  )}
+                  {!page.isHomePage && (
+                    <Button size="sm" variant="secondary" onClick={() => onSetHomePage(page)}>
+                      <Home className="h-3.5 w-3.5 mr-1" />
+                      Set as Homepage
+                    </Button>
+                  )}
+                  {page.isHomePage && (
+                    <span className="ml-2 text-xs text-green-600 flex items-center"><Home className="h-3.5 w-3.5 mr-1" /> Homepage</span>
                   )}
                 </div>
                 

@@ -16,6 +16,51 @@ import { SiteSettings } from "@/components/pages/site-settings"
 import DashboardShell from "@/components/dashboard/dashboard-shell"
 
 export default function PagesPage() {
+  // Lint fix: state for theme/style/submit
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedTheme, setSelectedTheme] = useState<string>("light");
+  const [stylePreferences, setStylePreferences] = useState<any>({});
+
+  // Handler for editing a page: opens the edit dialog and sets the current page
+  const handleEditPageClick = (page: Page) => {
+    setCurrentPage(page);
+    setTitle(page.title);
+    setSlug(page.slug);
+    setContent(page.content || "");
+    setIsHomePage(!!page.isHomePage);
+    setShowEditDialog(true);
+  };
+
+  // Handler for deleting a page: opens the delete dialog and sets the current page
+  const handleDeletePageClick = (page: Page) => {
+    setCurrentPage(page);
+    setShowDeleteDialog(true);
+  };
+
+  // Handler for setting a page as homepage
+  const handleSetHomePage = async (page: Page) => {
+    if (!user) return;
+    try {
+      // Unset other homepages
+      const homePages = pages.filter(p => p.isHomePage);
+      for (const homePage of homePages) {
+        await updateDoc(doc(db, `Users/${user.uid}/pages`, homePage.id), {
+          isHomePage: false,
+          updatedAt: serverTimestamp()
+        });
+      }
+      // Set selected page as homepage
+      await updateDoc(doc(db, `Users/${user.uid}/pages`, page.id), {
+        isHomePage: true,
+        updatedAt: serverTimestamp()
+      });
+      setPages(prev => prev.map(p => ({ ...p, isHomePage: p.id === page.id })));
+      toast({ title: "Homepage set", description: `"${page.title}" is now your homepage.` });
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to set homepage.", variant: "destructive" });
+    }
+  };
+
   // Use the useParams hook to get the username parameter
   const params = useParams();
   const username = params.username as string;
@@ -344,37 +389,33 @@ export default function PagesPage() {
   return (
     <DashboardShell>
       <div className="container py-6 space-y-6">
-        <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold">Pages</h1>
-          <Button onClick={navigateToCreatePage}>
-            <Plus className="h-4 w-4 mr-2" />
-            Create Page
-          </Button>
-        </div>
-
-        <Tabs defaultValue="pages">
-          <TabsList>
-            <TabsTrigger value="pages">
-              <FileText className="h-4 w-4 mr-2" />
-              Your Pages
-            </TabsTrigger>
-            <TabsTrigger value="settings">
-              <Layout className="h-4 w-4 mr-2" />
-              Site Settings
-            </TabsTrigger>
+      <header>
+          <h1 className="text-2xl font-bold tracking-tight">Pages</h1>
+          <p className="text-muted-foreground">
+            Choose the layout and theme of your minispace.
+          </p>
+        </header>
+        <Tabs defaultValue="pages" className="w-full">
+          <TabsList className="mb-6">
+            <TabsTrigger value="pages">Pages</TabsTrigger>
+            <TabsTrigger value="settings">Settings</TabsTrigger>
           </TabsList>
-
-          <TabsContent value="pages" className="space-y-4">
+          <TabsContent value="pages">
+            <div className="flex justify-end mb-4">
+              <Button onClick={() => router.push(`/${username}/dashboard/pages/new`)}>
+                <Plus className="h-4 w-4 mr-2" /> New Page
+              </Button>
+            </div>
             <PageList
               pages={pages}
               isLoading={isLoading}
               username={username}
-              onEditPage={openEditDialog}
-              onDeletePage={openDeleteDialog}
+              onEditPage={handleEditPageClick}
+              onDeletePage={handleDeletePageClick}
+              onSetHomePage={handleSetHomePage}
             />
           </TabsContent>
-
-          <TabsContent value="settings" className="space-y-4">
+          <TabsContent value="settings">
             <SiteSettings
               username={username}
               headerText={headerText}
@@ -396,33 +437,35 @@ export default function PagesPage() {
             />
           </TabsContent>
         </Tabs>
-
         {/* Edit Page Dialog */}
-        <EditPageDialog
-          open={showEditDialog}
-          onOpenChange={setShowEditDialog}
-          page={currentPage}
-          username={username}
-          isEditing={isEditing}
-          onSave={handleEditPage}
-          title={title}
-          setTitle={setTitle}
-          slug={slug}
-          setSlug={setSlug}
-          content={content}
-          setContent={setContent}
-          isHomePage={isHomePage}
-          setIsHomePage={setIsHomePage}
-        />
-
+        {currentPage && (
+          <EditPageDialog
+            open={showEditDialog}
+            onOpenChange={setShowEditDialog}
+            page={currentPage}
+            username={username}
+            isEditing={isEditing}
+            onSave={handleEditPage}
+            title={title}
+            setTitle={setTitle}
+            slug={slug}
+            setSlug={setSlug}
+            content={content}
+            setContent={setContent}
+            isHomePage={isHomePage}
+            setIsHomePage={setIsHomePage}
+          />
+        )}
         {/* Delete Page Dialog */}
-        <DeletePageDialog
-          open={showDeleteDialog}
-          onOpenChange={setShowDeleteDialog}
-          page={currentPage}
-          onDelete={handleDeletePage}
-        />
+        {currentPage && (
+          <DeletePageDialog
+            open={showDeleteDialog}
+            onOpenChange={setShowDeleteDialog}
+            page={currentPage}
+            onDelete={handleDeletePage}
+          />
+        )}
       </div>
     </DashboardShell>
   );
-}
+};

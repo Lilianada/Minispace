@@ -62,9 +62,27 @@ export async function devCreateSessionCookie(idToken: string, options: { expires
 /**
  * Development-only function to verify a session cookie
  * In development, we'll accept any cookie and extract the UID from it
+ * If no cookie is provided or it's invalid, we'll use a default development user ID
  */
-export async function devVerifySessionCookie(sessionCookie: string): Promise<DecodedIdToken> {
+export async function devVerifySessionCookie(sessionCookie?: string): Promise<DecodedIdToken> {
   console.log('DEV MODE: Simulating session cookie verification');
+  
+  // Get the project ID from environment variables for consistency
+  const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'minispace-app-dev';
+  
+  // If no session cookie is provided, use a default development user
+  if (!sessionCookie) {
+    console.log('DEV MODE: No session cookie provided, using default development user');
+    return {
+      aud: projectId,
+      auth_time: Math.floor(Date.now() / 1000),
+      exp: Math.floor(Date.now() / 1000) + 3600,
+      iat: Math.floor(Date.now() / 1000),
+      iss: `https://securetoken.google.com/${projectId}`,
+      sub: 'dev-user-id',
+      uid: 'dev-user-id',
+    } as DecodedIdToken;
+  }
   
   try {
     // For development, we'll try to parse the cookie directly
@@ -82,9 +100,6 @@ export async function devVerifySessionCookie(sessionCookie: string): Promise<Dec
       // Just use a placeholder UID for development
       console.log('DEV MODE: Using placeholder UID for non-JWT cookie');
       
-      // Get the project ID from environment variables for consistency
-      const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'minispace-app-dev';
-      
       return {
         aud: projectId,
         auth_time: Math.floor(Date.now() / 1000),
@@ -100,6 +115,16 @@ export async function devVerifySessionCookie(sessionCookie: string): Promise<Dec
     return devVerifyIdToken(sessionCookie);
   } catch (error) {
     console.error('Error in development session cookie verification:', error);
-    throw new Error('Invalid session cookie');
+    // Instead of throwing, return a default development user
+    console.log('DEV MODE: Error verifying session cookie, using default development user');
+    return {
+      aud: projectId,
+      auth_time: Math.floor(Date.now() / 1000),
+      exp: Math.floor(Date.now() / 1000) + 3600,
+      iat: Math.floor(Date.now() / 1000),
+      iss: `https://securetoken.google.com/${projectId}`,
+      sub: 'dev-user-id',
+      uid: 'dev-user-id',
+    } as DecodedIdToken;
   }
 }

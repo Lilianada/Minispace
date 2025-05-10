@@ -169,24 +169,26 @@ function initializeWithProjectId(): boolean {
 }
 
 /**
- * Gets the Firebase Admin app, initializing it if necessary
+ * Get the Firebase Admin app instance
+ * This is a lazy-loaded singleton to avoid initializing Firebase Admin unnecessarily
  */
-export function getFirebaseAdminApp(): admin.app.App {
-  const app = initializeFirebaseAdmin();
-  if (!app) {
-    throw new Error('Failed to initialize Firebase Admin');
+export function getAdminApp() {
+  // Only initialize if not already done
+  if (!isInitialized) {
+    console.log('Initializing Firebase Admin...');
+    firebaseAdmin = initializeFirebaseAdmin();
+    
+    if (!firebaseAdmin) {
+      console.error('Failed to initialize Firebase Admin SDK. Authentication will not work.');
+      console.error('Make sure you have set up the FIREBASE_SERVICE_ACCOUNT_KEY environment variable.');
+    }
   }
-  return app;
-}
-
-/**
- * Exports the admin services for use in the application
- */
-export const getAdminApp = () => {
-  const app = getFirebaseAdminApp();
+  
+  // Return the admin app and auth instance
   return {
-    auth: app.auth(),
-    db: app.firestore(),
+    app: firebaseAdmin,
+    auth: firebaseAdmin ? firebaseAdmin.auth() : undefined,
+    firestore: firebaseAdmin ? firebaseAdmin.firestore() : undefined,
   };
 };
 

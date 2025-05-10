@@ -147,7 +147,7 @@ export async function getAuthenticatedUser(username: string, noRedirect = false)
   try {
     // For development mode, we need to find the user by username
     if (process.env.NODE_ENV === 'development') {
-      console.log('Development mode: Looking up user by username or ID');
+      // console.log('Development mode: Looking up user by username or ID');
       
       // First try to find the user by username in the User collection
       try {

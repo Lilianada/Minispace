@@ -12,6 +12,20 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
+// For custom domains, we can override the authDomain
+// This helps with authentication on custom domains
+if (typeof window !== 'undefined') {
+  // Only run in browser environment
+  const hostname = window.location.hostname;
+  
+  // If we're on the production domain (not localhost or firebase domain)
+  if (hostname === 'minispace.dev' || hostname === 'www.minispace.dev' || hostname.endsWith('.minispace.dev')) {
+    // Use the current domain as the auth domain
+    // This ensures the auth popup opens on the same domain
+    firebaseConfig.authDomain = hostname;
+  }
+}
+
 // Check if all required config values are present
 const isConfigValid = Object.values(firebaseConfig).every(
   (value) => value !== undefined && value !== null && value !== ""

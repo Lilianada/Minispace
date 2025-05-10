@@ -167,12 +167,18 @@ export default async function SubdomainPage({
   const pageData = await getPageBySlug(userData.id, slugPath)
   
   if (!pageData) {
-    notFound()
+    return (
+      <div style={{ minHeight: '60vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
+        <h1 className="text-2xl font-semibold mb-4">No Homepage Set</h1>
+        <p className="mb-4 text-muted-foreground">This site does not have a homepage yet. The owner needs to set a homepage in their dashboard.</p>
+      </div>
+    );
   }
   
   // Extract user settings for styling
   const {
     headerText = userData.username,
+    footerText = ` ${new Date().getFullYear()} ${userData.username}`,
     footerText = `© ${new Date().getFullYear()} ${userData.username}`,
     selectedLayout = 'classic-columnist',
     fontFamily = 'inter',

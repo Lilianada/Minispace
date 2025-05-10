@@ -60,25 +60,14 @@ export async function POST(request: NextRequest) {
           if (userDoc.exists) {
             const userData = userDoc.data();
             username = userData?.username;
-            console.log('Found username from Firestore:', username);
           }
-          
-          // Set the redirect to the user's dashboard
           if (username) {
             dashboardRedirect = `/${username}/dashboard`;
           } else {
-            // If we can't get the username, use the UID as fallback
-            const { auth } = getAdminApp();
-            const authUser = await auth.getUser(decodedToken.uid);
-            username = authUser.displayName || decodedToken.uid;
-            dashboardRedirect = `/${username}/dashboard`;
+            dashboardRedirect = '/settings';
           }
-          
-          console.log('Setting default redirect to dashboard:', dashboardRedirect);
-        } catch (error) {
-          console.error('Error getting user data for redirect:', error);
-          // If we can't get the username, use the UID as fallback
-          dashboardRedirect = `/${decodedToken.uid}/dashboard`;
+        } catch (e) {
+          dashboardRedirect = '/settings';
         }
       }
       

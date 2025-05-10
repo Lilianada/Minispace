@@ -69,12 +69,12 @@ export default function BlogSettingsPage() {
   return (
     <DashboardShell>
       <div className="space-y-6">
-        <div>
+        <header>
           <h1 className="text-2xl font-bold tracking-tight">Blog Settings</h1>
           <p className="text-muted-foreground">
             Configure how your blog appears to visitors
           </p>
-        </div>
+        </header>
         
         <Separator />
         

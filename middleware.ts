@@ -9,8 +9,10 @@ import { NextRequest, NextResponse } from 'next/server';
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   
-  // Check if this is a dashboard route that needs authentication
-  if (pathname.includes('/dashboard')) {
+  // Only protect specific routes
+  const PROTECTED_PATHS = ['/dashboard', '/settings', '/content', '/theme', '/domain', '/emails', '/social'];
+  const isProtected = PROTECTED_PATHS.some((protectedPath) => pathname.startsWith(protectedPath));
+  if (isProtected) {
     // Get the session cookie
     const sessionCookie = request.cookies.get('session')?.value;
     
