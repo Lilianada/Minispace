@@ -178,7 +178,6 @@ export default async function SubdomainPage({
   // Extract user settings for styling
   const {
     headerText = userData.username,
-    footerText = ` ${new Date().getFullYear()} ${userData.username}`,
     footerText = `© ${new Date().getFullYear()} ${userData.username}`,
     selectedLayout = 'classic-columnist',
     fontFamily = 'inter',

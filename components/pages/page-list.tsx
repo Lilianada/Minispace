@@ -3,9 +3,16 @@
 import { useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Edit, Trash2, Home, ExternalLink } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { MoreHorizontal, Edit, Trash2, Home, ExternalLink } from "lucide-react"
 import Link from "next/link"
 import { Skeleton } from "@/components/ui/skeleton"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 export interface Page {
   id: string
@@ -34,22 +41,48 @@ export function PageList({
   onDeletePage, 
   onSetHomePage 
 }: PageListProps) {
+  // Helper function to format dates
+  const formatDate = (date: any) => {
+    if (!date) return "Unknown"
+    
+    // Handle Firestore Timestamps
+    const dateObj = date.toDate ? date.toDate() : new Date(date)
+    
+    // Format as DD/MM/YYYY
+    return new Intl.DateTimeFormat('en-GB', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    }).format(dateObj)
+  }
+  
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="space-y-2">
+        <div className="grid grid-cols-4 px-4 py-3 font-medium text-sm">
+          <div className="col-span-1">Title</div>
+          <div className="col-span-1 text-center">Status</div>
+          <div className="col-span-1 text-center">Last Updated</div>
+          <div className="col-span-1 text-right">Actions</div>
+        </div>
         {[1, 2, 3, 4].map((i) => (
-          <Card key={i} className="overflow-hidden">
-            <CardContent className="p-6">
-              <div className="space-y-3">
-                <Skeleton className="h-4 w-3/4" />
-                <Skeleton className="h-3 w-1/2" />
-                <div className="flex justify-between pt-2">
-                  <Skeleton className="h-8 w-16" />
-                  <Skeleton className="h-8 w-16" />
-                </div>
+          <div key={i} className="rounded-md border px-4 py-3">
+            <div className="grid grid-cols-4 gap-4 items-center">
+              <div className="col-span-1">
+                <Skeleton className="h-5 w-32" />
+                <Skeleton className="h-3 w-24 mt-1" />
               </div>
-            </CardContent>
-          </Card>
+              <div className="col-span-1 flex justify-center">
+                <Skeleton className="h-6 w-20" />
+              </div>
+              <div className="col-span-1 flex justify-center">
+                <Skeleton className="h-4 w-24" />
+              </div>
+              <div className="col-span-1 flex justify-end">
+                <Skeleton className="h-9 w-9 rounded-md" />
+              </div>
+            </div>
+          </div>
         ))}
       </div>
     )
@@ -71,56 +104,79 @@ export function PageList({
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="space-y-2">
+      {/* Table Headers */}
+      <div className="grid grid-cols-4 px-4 py-3 font-medium text-sm">
+        <div className="col-span-1">Title</div>
+        <div className="col-span-1 text-center">Status</div>
+        <div className="col-span-1 text-center">Last Updated</div>
+        <div className="col-span-1 text-right">Actions</div>
+      </div>
+
+      {/* Table Rows */}
       {pages.map((page) => (
-        <Card key={page.id} className="overflow-hidden">
-          <CardContent className="p-6">
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <h3 className="font-medium truncate">{page.title}</h3>
-                  {page.isHomePage && (
-                    <Home className="h-3.5 w-3.5 text-muted-foreground" />
-                  )}
-                </div>
-              </div>
-              
-              <p className="text-sm text-muted-foreground truncate">
-                /{page.slug}
-              </p>
-              
-              <div className="flex justify-between pt-2">
-                <div className="flex gap-2">
-                  <Button size="sm" variant="outline" onClick={() => onEditPage(page)}>
-                    <Edit className="h-3.5 w-3.5 mr-1" />
-                    Edit
-                  </Button>
-                  {!page.isHomePage && (
-                    <Button size="sm" variant="outline" onClick={() => onDeletePage(page)}>
-                      <Trash2 className="h-3.5 w-3.5 mr-1" />
-                      Delete
-                    </Button>
-                  )}
-                  {!page.isHomePage && (
-                    <Button size="sm" variant="secondary" onClick={() => onSetHomePage(page)}>
-                      <Home className="h-3.5 w-3.5 mr-1" />
-                      Set as Homepage
-                    </Button>
-                  )}
-                  {page.isHomePage && (
-                    <span className="ml-2 text-xs text-green-600 flex items-center"><Home className="h-3.5 w-3.5 mr-1" /> Homepage</span>
-                  )}
-                </div>
-                
-                <Button size="sm" variant="outline" asChild>
-                  <a href={`https://${username}.minispace.dev/${page.slug}`} target="_blank" rel="noopener noreferrer">
-                    View <ExternalLink className="ml-1 h-3 w-3" />
-                  </a>
-                </Button>
-              </div>
+        <div key={page.id} className="rounded-md border px-4 py-3">
+          <div className="grid grid-cols-4 gap-4 items-center">
+            {/* Title and URL */}
+            <div className="col-span-1">
+              <div className="font-medium line-clamp-1">{page.title}</div>
+              <div className="text-xs text-muted-foreground">/{page.slug}</div>
             </div>
-          </CardContent>
-        </Card>
+
+            {/* Status */}
+            <div className="col-span-1 flex justify-center">
+              {page.isHomePage ? (
+                <Badge variant="outline" className="bg-primary/20 text-primary border-primary/40">
+                  Published
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="bg-muted text-muted-foreground">
+                  Draft
+                </Badge>
+              )}
+            </div>
+
+            {/* Last Updated */}
+            <div className="col-span-1 text-center text-sm">
+              {formatDate(page.updatedAt)}
+            </div>
+
+            {/* Actions */}
+            <div className="col-span-1 flex justify-end">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => onEditPage(page)}>
+                    <Edit className="h-4 w-4 mr-2" />
+                    Edit
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    onClick={() => window.open(`https://${username}.minispace.dev/${page.slug}`, '_blank')}
+                  >
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    View
+                  </DropdownMenuItem>
+                  {!page.isHomePage && (
+                    <>
+                      <DropdownMenuItem onClick={() => onSetHomePage(page)}>
+                        <Home className="h-4 w-4 mr-2" />
+                        Set as Homepage
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => onDeletePage(page)} className="text-red-500 focus:text-red-500">
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Delete
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </div>
+        </div>
       ))}
     </div>
   )
