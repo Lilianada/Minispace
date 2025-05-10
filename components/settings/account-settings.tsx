@@ -42,7 +42,7 @@ export function AccountSettings({
             disabled={isSubmitting}
           />
           <p className="text-xs text-muted-foreground">
-            Your username is used for your profile URL: minispace.app/{username}
+            Your username is used for your profile URL: minispace.dev/{username}
           </p>
         </div>
         

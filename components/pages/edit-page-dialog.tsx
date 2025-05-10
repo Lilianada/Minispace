@@ -80,7 +80,7 @@ export function EditPageDialog({
               />
             </div>
             <p className="text-xs text-muted-foreground">
-              This will be the URL path for your page: {username}.minispace.app/{slug}
+              This will be the URL path for your page: {username}.minispace.dev/{slug}
             </p>
           </div>
           

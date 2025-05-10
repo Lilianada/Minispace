@@ -89,13 +89,13 @@ export function ProfileHeader({
         <div className="flex items-center space-x-1 text-sm">
           <div className="flex items-center space-x-2">
             <p className="text-sm text-muted-foreground">
-              <span className="font-medium text-foreground">{username}</span>.minispace.app
+              <span className="font-medium text-foreground">{username}</span>.minispace.dev
             </p>
             <Button 
               variant="ghost" 
               size="icon" 
               className="h-8 w-8" 
-              onClick={() => copyToClipboard(`https://${username}.minispace.app`)}
+              onClick={() => copyToClipboard(`https://${username}.minispace.dev`)}
             >
               {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
             </Button>

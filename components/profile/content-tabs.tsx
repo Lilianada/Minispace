@@ -94,7 +94,7 @@ export function ContentTabs({ username, pages, posts }: ContentTabsProps) {
                           </Link>
                         </Button>
                         <Button size="sm" variant="outline" asChild>
-                          <a href={`https://${username}.minispace.app/${page.slug}`} target="_blank" rel="noopener noreferrer">
+                          <a href={`https://${username}.minispace.dev/${page.slug}`} target="_blank" rel="noopener noreferrer">
                             View <ExternalLink className="ml-1 h-3 w-3" />
                           </a>
                         </Button>
@@ -150,7 +150,7 @@ export function ContentTabs({ username, pages, posts }: ContentTabsProps) {
                           </Link>
                         </Button>
                         <Button size="sm" variant="outline" asChild>
-                          <a href={`https://${username}.minispace.app/posts/${post.slug}`} target="_blank" rel="noopener noreferrer">
+                          <a href={`https://${username}.minispace.dev/posts/${post.slug}`} target="_blank" rel="noopener noreferrer">
                             View <ExternalLink className="ml-1 h-3 w-3" />
                           </a>
                         </Button>

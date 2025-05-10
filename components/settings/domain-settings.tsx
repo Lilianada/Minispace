@@ -85,7 +85,7 @@ export function DomainSettings({
                 <div className="text-sm">Host</div>
                 <div className="text-sm font-mono">www</div>
                 <div className="text-sm">Value</div>
-                <div className="text-sm font-mono">cname.minispace.app</div>
+                <div className="text-sm font-mono">cname.minispace.dev</div>
               </div>
             </div>
             
