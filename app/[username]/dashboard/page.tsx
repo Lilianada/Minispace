@@ -123,7 +123,7 @@ export default async function DashboardPage({ params }: { params: { username: st
             </div>
             <p className="text-xs text-muted-foreground">
               {userData?.enableBlog 
-                ? `Live at ${username}.minispace.app` 
+                ? `Live at ${username}.minispace.dev` 
                 : 'Blog is currently disabled'}
             </p>
           </CardContent>
@@ -200,7 +200,7 @@ export default async function DashboardPage({ params }: { params: { username: st
                     </Button>
                     {post.published && (
                       <Button asChild size="sm" variant="ghost">
-                        <Link href={`https://${username}.minispace.app/blog/${post.slug}`} target="_blank">
+                        <Link href={`https://${username}.minispace.dev/blog/${post.slug}`} target="_blank">
                           View
                         </Link>
                       </Button>

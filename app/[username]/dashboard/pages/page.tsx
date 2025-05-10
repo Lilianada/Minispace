@@ -7,7 +7,6 @@ import { db } from "@/lib/firebase"
 import { useAuth } from "@/lib/auth-context"
 import { Button } from "@/components/ui/button"
 import { Plus, FileText, Layout } from "lucide-react"
-import Link from "next/link"
 import { useToast } from "@/components/ui/use-toast"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { PageList, Page } from "@/components/pages/page-list"
@@ -15,9 +14,6 @@ import { EditPageDialog } from "@/components/pages/edit-page-dialog"
 import { DeletePageDialog } from "@/components/pages/delete-page-dialog"
 import { SiteSettings } from "@/components/pages/site-settings"
 import DashboardShell from "@/components/dashboard/dashboard-shell"
-import { ThemeSelector } from "@/components/pages/theme-selector"
-import { SiteFont } from "@/components/pages/select-siteFont"
-import { BlogSettings, StylePreferences } from "@/lib/types"
 
 export default function PagesPage() {
   // Use the useParams hook to get the username parameter
@@ -40,21 +36,18 @@ export default function PagesPage() {
   const [isHomePage, setIsHomePage] = useState(false);
   const [headerText, setHeaderText] = useState("");
   const [footerText, setFooterText] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  // Theme selection state
-  const [selectedTheme, setSelectedTheme] = useState("default")
+  // Layout and theme selection states
+  const [selectedLayout, setSelectedLayout] = useState("classic-columnist")
   // Dialog states
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
-  const [stylePreferences, setStylePreferences] = useState<StylePreferences>({
-      fontFamily: "system-ui",
-      fontSize: "16px",
-      textColor: "#000000",
-      backgroundColor: "#ffffff",
-      accentColor: "#3b82f6"
-    })
-    
+  // Theme color states
+  const [fontFamily, setFontFamily] = useState("inter")
+  const [accentColor, setAccentColor] = useState("#3b82f6")
+  const [backgroundColor, setBackgroundColor] = useState("#ffffff")
+  const [textColor, setTextColor] = useState("#000000")
+  
 
   useEffect(() => {
     if (!user) return;
@@ -81,10 +74,32 @@ export default function PagesPage() {
 
         setPages(fetchedPages);
 
-        // Also fetch user settings for header/footer
+        // Also fetch user settings for header/footer and theme
         if (userData) {
           setHeaderText((userData as any)?.headerText || userData?.username || "");
           setFooterText((userData as any)?.footerText || "© " + new Date().getFullYear());
+          
+          // Load layout and theme settings if available
+          if ((userData as any)?.selectedLayout) {
+            setSelectedLayout((userData as any).selectedLayout);
+          }
+          
+          // Load font and color settings if available
+          if ((userData as any)?.fontFamily) {
+            setFontFamily((userData as any).fontFamily);
+          }
+          
+          if ((userData as any)?.accentColor) {
+            setAccentColor((userData as any).accentColor);
+          }
+          
+          if ((userData as any)?.backgroundColor) {
+            setBackgroundColor((userData as any).backgroundColor);
+          }
+          
+          if ((userData as any)?.textColor) {
+            setTextColor((userData as any).textColor);
+          }
         }
       } catch (error) {
         console.error("Error fetching pages:", error);
@@ -197,11 +212,16 @@ export default function PagesPage() {
 
     try {
       setIsSaving(true);
-      // Update user document with header and footer text
+      // Update user document with header, footer, layout and theme settings
       const userDocRef = doc(db, `Users/${user.uid}`);
       await updateDoc(userDocRef, {
         headerText,
-        footerText
+        footerText,
+        selectedLayout,
+        fontFamily,
+        accentColor,
+        backgroundColor,
+        textColor
       });
 
       toast({
@@ -361,20 +381,18 @@ export default function PagesPage() {
               setHeaderText={setHeaderText}
               footerText={footerText}
               setFooterText={setFooterText}
+              selectedLayout={selectedLayout}
+              setSelectedLayout={setSelectedLayout}
+              fontFamily={fontFamily}
+              setFontFamily={setFontFamily}
+              accentColor={accentColor}
+              setAccentColor={setAccentColor}
+              backgroundColor={backgroundColor}
+              setBackgroundColor={setBackgroundColor}
+              textColor={textColor}
+              setTextColor={setTextColor}
               onSave={handleUpdateSiteSettings}
               isSaving={isSaving}
-            />
-            <SiteFont
-             fontFamily={stylePreferences.fontFamily || "system"}
-             setFontFamily={(fontFamily) => setStylePreferences({...stylePreferences, fontFamily})}
-             isSubmitting={isSubmitting}
-             onSave={saveStylePreferences}
-            />
-            <ThemeSelector
-              selectedTheme={selectedTheme}
-              setSelectedTheme={setSelectedTheme}
-              onSave={saveThemeSelection}
-              isSubmitting={isSubmitting}
             />
           </TabsContent>
         </Tabs>

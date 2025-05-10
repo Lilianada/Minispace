@@ -162,7 +162,7 @@ This is a **live editor** where you can test your markdown formatting.
 
 - Create a list
 - Add *italic* or **bold** text
-- [Add a link](https://minispace.app)
+- [Add a link](https://minispace.dev)
 - > Add a blockquote
 
 ### Code example:

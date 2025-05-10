@@ -342,7 +342,7 @@ export default function NewPagePage() {
                     />
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    This will be the URL path: {username}.minispace.app/{metadata.slug || 'page-url'}
+                    This will be the URL path: {username}.minispace.dev/{metadata.slug || 'page-url'}
                   </p>
                 </div>
                 

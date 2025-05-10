@@ -236,13 +236,13 @@ export default function ProfilePage() {
       navigator.share({
         title: `${displayName}'s Profile`,
         text: `Check out ${displayName}'s profile on MINISPACE`,
-        url: `https://${username}.minispace.app`
+        url: `https://${username}.minispace.dev`
       }).catch(error => {
         console.error("Error sharing profile:", error);
       });
     } else {
       // Fallback for browsers that don't support the Web Share API
-      navigator.clipboard.writeText(`https://${username}.minispace.app`);
+      navigator.clipboard.writeText(`https://${username}.minispace.dev`);
       toast({
         title: "URL Copied",
         description: "Profile URL has been copied to clipboard"

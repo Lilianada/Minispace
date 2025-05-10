@@ -21,14 +21,14 @@ export default function RootLayout({
         <meta property="og:title" content="MINISPACE – Minimalist Reading & Writing Platform" />
         <meta property="og:description" content="A minimalist platform for reading and writing. Publish, read, and discover articles without the noise." />
         <meta property="og:type" content="website" />
-        <meta property="og:url" content="https://minispace.app/" />
+        <meta property="og:url" content="https://minispace.dev/" />
         <meta property="og:image" content="/logo.png" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="MINISPACE – Minimalist Reading & Writing Platform" />
         <meta name="twitter:description" content="A minimalist platform for reading and writing. Publish, read, and discover articles without the noise." />
         <meta name="twitter:image" content="/logo.png" />
         <link rel="icon" href="/logo.png" type="image/png" />
-        <link rel="canonical" href="https://minispace.app/" />
+        <link rel="canonical" href="https://minispace.dev/" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -36,15 +36,15 @@ export default function RootLayout({
               "@context": "https://schema.org",
               "@type": "WebSite",
               "name": "MINISPACE – Minimalist Reading & Writing Platform",
-              "url": "https://minispace.app/",
+              "url": "https://minispace.dev/",
               "description": "A minimalist platform for reading and writing. Publish, read, and discover articles without the noise.",
-              "image": "https://minispace.app/logo.png",
+              "image": "https://minispace.dev/logo.png",
               "publisher": {
                 "@type": "Organization",
                 "name": "Lily's Lab",
                 "logo": {
                   "@type": "ImageObject",
-                  "url": "https://minispace.app/logo.png"
+                  "url": "https://minispace.dev/logo.png"
                 }
               },
               "sameAs": [
