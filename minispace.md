@@ -1,19 +1,19 @@
 # MINISPACE Implementation Guide
 
-This document outlines the steps needed to transform the MINI app into MINISPACE - a lightweight blogging platform with user subdomains (username.minispace.app) similar to bearblog.dev.
+This document outlines the steps needed to transform the MINI app into MINISPACE - a lightweight blogging platform with user subdomains (username.minispace.dev) similar to bearblog.dev.
 
 ## 1. Domain and DNS Configuration
 
 ### For Main App
-- Purchase the `minispace.app` domain
+- Purchase the `minispace.dev` domain
 - Set up DNS records for the main app:
-  - `A` record for `minispace.app` pointing to your server IP
-  - `A` record for `www.minispace.app` pointing to your server IP
+  - `A` record for `minispace.dev` pointing to your server IP
+  - `A` record for `www.minispace.dev` pointing to your server IP
 
 ### For User Subdomains
 - Set up wildcard DNS records:
-  - `A` record for `*.minispace.app` pointing to your server IP
-  - Obtain a wildcard SSL certificate for `*.minispace.app` (using Let's Encrypt or similar)
+  - `A` record for `*.minispace.dev` pointing to your server IP
+  - Obtain a wildcard SSL certificate for `*.minispace.dev` (using Let's Encrypt or similar)
 
 ## 2. Server Configuration
 
@@ -24,7 +24,7 @@ Bearblog uses a multi-tenant architecture where each subdomain is served by the 
 If using Vercel, Netlify, or similar:
 
 1. Configure domain routing in your hosting provider's dashboard
-2. Set up wildcard domain handling for `*.minispace.app`
+2. Set up wildcard domain handling for `*.minispace.dev`
 3. Use environment variables to detect the hostname/subdomain
 
 ### Option 2: Custom Server Implementation
@@ -47,7 +47,7 @@ app.prepare().then(() => {
     const hostname = req.hostname;
     
     // Check if we're dealing with a subdomain
-    if (hostname.includes('.minispace.app')) {
+    if (hostname.includes('.minispace.dev')) {
       const subdomain = hostname.split('.')[0];
       
       // Skip special subdomains
@@ -106,14 +106,14 @@ export function middleware(request: NextRequest) {
   const hostname = request.headers.get('host') || '';
   
   // Skip for main domain and special subdomains
-  if (hostname === 'minispace.app' || 
-      hostname === 'www.minispace.app' || 
+  if (hostname === 'minispace.dev' || 
+      hostname === 'www.minispace.dev' || 
       hostname.startsWith('api.')) {
     return NextResponse.next();
   }
   
   // Handle subdomain
-  if (hostname.endsWith('.minispace.app')) {
+  if (hostname.endsWith('.minispace.dev')) {
     const subdomain = hostname.split('.')[0];
     
     // Rewrite to the blog renderer

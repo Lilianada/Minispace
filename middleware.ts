@@ -31,16 +31,30 @@ export async function middleware(request: NextRequest) {
   
   // Handle subdomain routing for user blogs
   const hostname = request.headers.get('host') || '';
-  const subdomain = hostname.split('.')[0];
   
-  // If this is a subdomain request (e.g., username.minispace.app)
-  // and not localhost during development
-  if (
-    subdomain && 
-    !hostname.startsWith('localhost') && 
-    !hostname.startsWith('127.0.0.1') &&
-    !subdomain.includes('minispace')
-  ) {
+  // Skip subdomain routing for the main domain (with or without www)
+  if (hostname === 'minispace.dev' || hostname === 'www.minispace.dev') {
+    return NextResponse.next();
+  }
+  
+  // Skip for localhost during development
+  if (hostname.startsWith('localhost') || hostname.startsWith('127.0.0.1')) {
+    return NextResponse.next();
+  }
+  
+  // Extract the subdomain
+  const parts = hostname.split('.');
+  const isSubdomain = parts.length > 2 || (parts.length === 2 && parts[1] === 'minispace.dev');
+  
+  // If this is a valid subdomain request (e.g., username.minispace.dev)
+  if (isSubdomain) {
+    const subdomain = parts[0];
+    
+    // Skip for www subdomain as it's treated as main domain
+    if (subdomain === 'www') {
+      return NextResponse.next();
+    }
+    
     // Rewrite to the subdomain route
     const url = request.nextUrl.clone();
     url.pathname = `/subdomain/${subdomain}${pathname}`;

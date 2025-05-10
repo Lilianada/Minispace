@@ -20,12 +20,12 @@
 ---
 
 ## Overview
-**MINISPACE** is a clean, lightweight blogging platform where users get their own subdomain (`username.minispace.app`) to publish content with minimal distractions. Each user's blog functions as a standalone website with customizable pages, navigation styles, and appearance.
+**MINISPACE** is a clean, lightweight blogging platform where users get their own subdomain (`username.minispace.dev`) to publish content with minimal distractions. Each user's blog functions as a standalone website with customizable pages, navigation styles, and appearance.
 
 ---
 
 ## Features
-- Personal subdomains for each user (`username.minispace.app`)
+- Personal subdomains for each user (`username.minispace.dev`)
 - Customizable pages (home, projects, archive, etc.)
 - Multiple navigation style options
 - Customizable footer text
