@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
-import { collection, addDoc, serverTimestamp, doc, setDoc } from "firebase/firestore"
+import { doc, getDoc, updateDoc, serverTimestamp, collection, query, getDocs, orderBy } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 import { Page, ContentBlock, PageStyles } from "@/lib/types"
 import { MarkdownEditor } from "@/components/markdown-editor"
@@ -44,10 +44,12 @@ interface PageFormData {
   layout: string
 }
 
-export default function NewPagePage() {
-  // Use the useParams hook to get the username parameter
+export default function EditPagePage() {
+  // Use the useParams hook to get the username and page ID parameters
   const params = useParams()
   const username = params.username as string
+  const pageId = params.id as string
+  
   const { user, userData, loading } = useAuth()
   const router = useRouter()
   const { toast } = useToast()
@@ -57,6 +59,8 @@ export default function NewPagePage() {
   const [content, setContent] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [activeTab, setActiveTab] = useState("content")
+  const [isLoading, setIsLoading] = useState(true)
+  const [contentBlockId, setContentBlockId] = useState("")
   
   // Metadata states
   const [metadata, setMetadata] = useState<PageFormData>({
@@ -80,37 +84,80 @@ export default function NewPagePage() {
   
   // Preview state
   const [showPreview, setShowPreview] = useState(false)
-  
-  // Update slug based on title
+
+  // Load page data on component mount
   useEffect(() => {
-    if (title && !metadata.slug) {
-      setMetadata(prev => ({
-        ...prev,
-        slug: title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
-      }))
-    }
-  }, [title, metadata.slug])
-  
-  // Update metadata title when main title changes
-  useEffect(() => {
-    setMetadata(prev => ({
-      ...prev,
-      title: title
-    }))
-  }, [title])
-  
-  // Generate meta description from content if empty
-  useEffect(() => {
-    if (content && !metadata.metaDescription) {
-      const firstParagraph = content.split('\n')[0]
-      if (firstParagraph) {
-        setMetadata(prev => ({
-          ...prev,
-          metaDescription: firstParagraph.substring(0, 160) + (firstParagraph.length > 160 ? '...' : '')
-        }))
+    const fetchPageData = async () => {
+      if (!user) return
+      
+      try {
+        setIsLoading(true)
+        
+        // Get the page document
+        const pageDocRef = doc(db, `Users/${user.uid}/pages/${pageId}`)
+        const pageDoc = await getDoc(pageDocRef)
+        
+        if (!pageDoc.exists()) {
+          toast({
+            title: "Page not found",
+            description: "The requested page could not be found.",
+            variant: "destructive"
+          })
+          router.push(`/${username}/dashboard/pages`)
+          return
+        }
+        
+        const pageData = pageDoc.data() as Page
+        setTitle(pageData.title)
+        
+        // Set metadata from page data
+        setMetadata({
+          title: pageData.title,
+          slug: pageData.slug,
+          alias: pageData.alias || "",
+          canonicalUrl: pageData.canonicalUrl || "",
+          publishedDate: pageData.createdAt?.toDate() || new Date(),
+          isPage: pageData.isStaticPage || true,
+          metaDescription: pageData.seoDescription || "",
+          metaImage: pageData.seoImage || "",
+          language: pageData.language || "en",
+          tags: pageData.tags ? pageData.tags.join(", ") : "",
+          makeDiscoverable: pageData.makeDiscoverable ?? true,
+          backgroundColor: pageData.styles?.backgroundColor || "#ffffff",
+          textColor: pageData.styles?.textColor || "#000000",
+          fontFamily: pageData.styles?.fontFamily || "system-ui",
+          fontSize: pageData.styles?.fontSize || "16px",
+          layout: pageData.layout || "default"
+        })
+        
+        // Get content blocks
+        const contentBlocksRef = collection(pageDocRef, 'content')
+        const contentQuery = query(contentBlocksRef, orderBy('order'))
+        const contentSnapshot = await getDocs(contentQuery)
+        
+        // We're assuming the first content block for simplicity
+        if (!contentSnapshot.empty) {
+          const firstBlock = contentSnapshot.docs[0].data() as ContentBlock
+          setContent(firstBlock.content || "")
+          setContentBlockId(firstBlock.blockId)
+        }
+        
+      } catch (error) {
+        console.error("Error fetching page:", error)
+        toast({
+          title: "Error",
+          description: "Failed to load page data. Please try again.",
+          variant: "destructive"
+        })
+      } finally {
+        setIsLoading(false)
       }
     }
-  }, [content, metadata.metaDescription])
+    
+    if (user && pageId) {
+      fetchPageData()
+    }
+  }, [user, pageId, username, router, toast])
   
   const handleMetadataChange = (key: keyof PageFormData, value: any) => {
     setMetadata(prev => ({
@@ -156,21 +203,17 @@ export default function NewPagePage() {
         fontSize: metadata.fontSize
       }
       
-      // Create page document in the User's pages subcollection
-      const userPagesCollection = collection(db, `Users/${user.uid}/pages`)
-      const pageDocRef = await addDoc(userPagesCollection, {
-        pageId: '', // Will be updated after we get the ID
+      // Update page document
+      const pageDocRef = doc(db, `Users/${user.uid}/pages/${pageId}`)
+      await updateDoc(pageDocRef, {
         title,
         slug: metadata.slug,
-        isPublished: true,
-        createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
         layout: metadata.layout,
         styles,
         seoDescription: metadata.metaDescription || null,
         seoImage: metadata.metaImage || null,
         canonicalUrl: metadata.canonicalUrl || null,
-        isHomepage: false,
         alias: metadata.alias || null,
         language: metadata.language || "en",
         tags: tagsArray,
@@ -178,39 +221,23 @@ export default function NewPagePage() {
         isStaticPage: metadata.isPage
       })
       
-      // Update the pageId field with the generated document ID
-      await setDoc(pageDocRef, { pageId: pageDocRef.id }, { merge: true })
-      
-      // Create the initial content block in the content subcollection
-      const contentBlocksCollection = collection(pageDocRef, 'content')
-      const contentBlockRef = await addDoc(contentBlocksCollection, {
-        blockId: '', // Will be updated after we get the ID
-        type: 'markdown',
-        content,
-        layoutType: 'column',
-        order: 0,
-        styles: {
-          padding: '1rem',
-          margin: '0',
-          backgroundColor: 'transparent'
-        }
-      })
-      
-      // Update the blockId field with the generated document ID
-      await setDoc(contentBlockRef, { blockId: contentBlockRef.id }, { merge: true })
+      // Update content block if it exists
+      if (contentBlockId) {
+        const contentBlockRef = doc(db, `Users/${user.uid}/pages/${pageId}/content/${contentBlockId}`)
+        await updateDoc(contentBlockRef, {
+          content,
+        })
+      }
       
       toast({
-        title: "Page created",
-        description: "Your page has been created successfully."
+        title: "Page updated",
+        description: "Your page has been updated successfully."
       })
-      
-      // Redirect to pages list
-      router.push(`/${username}/dashboard/pages`)
     } catch (error) {
-      console.error("Error creating page:", error)
+      console.error("Error updating page:", error)
       toast({
         title: "Error",
-        description: "Failed to create page. Please try again.",
+        description: "Failed to update page. Please try again.",
         variant: "destructive"
       })
     } finally {
@@ -222,7 +249,7 @@ export default function NewPagePage() {
     setShowPreview(!showPreview)
   }
   
-  if (!user || loading) {
+  if (isLoading || !user || loading) {
     return (
       <div className="space-y-4">
         <div className="flex items-center gap-2">
@@ -248,7 +275,7 @@ export default function NewPagePage() {
               <ArrowLeft className="h-4 w-4" />
             </Link>
           </Button>
-          <h1 className="text-base font-bold tracking-tight">Create New Page</h1>
+          <h1 className="text-base font-bold tracking-tight">Edit Page</h1>
         </div>
         
         <div className="flex items-center gap-2">
@@ -269,7 +296,7 @@ export default function NewPagePage() {
             className="h-8"
           >
             <Save className="h-4 w-4 mr-1" />
-            {isSubmitting ? "Creating..." : "Create Page"}
+            {isSubmitting ? "Saving..." : "Save Changes"}
           </Button>
         </div>
       </div>
@@ -299,7 +326,7 @@ export default function NewPagePage() {
                 id="title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="My New Page"
+                placeholder="My Page Title"
               />
             </div>
             
@@ -513,7 +540,6 @@ export default function NewPagePage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                
                 <div className="space-y-2">
                   <Label htmlFor="backgroundColor">Background Color</Label>
                   <div className="flex items-center gap-2">

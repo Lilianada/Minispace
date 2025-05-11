@@ -46,6 +46,9 @@ export async function GET(request: NextRequest) {
         }
         
         const { auth } = getAdminApp();
+        if (!auth) {
+          throw new Error('Firebase Auth is not properly initialized');
+        }
         decodedClaims = await auth.verifySessionCookie(sessionCookie, true);
       }
       
@@ -59,34 +62,82 @@ export async function GET(request: NextRequest) {
       }
     
       // Get the user data from Firestore
+      // Get the admin app instance with firestore db access
       const { db } = getAdminApp();
-      const userDoc = await db.collection('Users').doc(userId).get();
       
-      if (!userDoc.exists) {
-        return NextResponse.json(
-          { error: 'User not found' },
-          { status: 404 }
-        );
-      }
-    
-      // Return the user data (excluding sensitive information)
-      const userData = userDoc.data();
-      
-      if (!userData) {
-        return NextResponse.json(
-          { error: 'User data is empty' },
-          { status: 404 }
-        );
+      // If we're in development mode and db is not properly initialized, return mock data
+      if (process.env.NODE_ENV === 'development' && (!db || !db.collection)) {
+        console.log('ME API: Firestore not available in development, returning mock user data');
+        return NextResponse.json({
+          uid: userId,
+          username: 'devuser',
+          displayName: 'Development User',
+          email: 'dev@example.com',
+          enableBlog: true,
+          customDomain: null,
+          _devMode: true
+        }, { status: 200 });
       }
       
-      return NextResponse.json({
-        uid: userData.uid,
-        username: userData.username,
-        displayName: userData.displayName,
-        email: userData.email,
-        enableBlog: userData.enableBlog,
-        customDomain: userData.customDomain,
-      }, { status: 200 });
+      // Make sure db is properly initialized before accessing Firestore
+      if (!db || !db.collection) {
+        console.error('Firestore instance is not available');
+        return NextResponse.json(
+          { error: 'Database connection error' },
+          { status: 500 }
+        );
+      }
+
+      try {
+        const userDoc = await db.collection('Users').doc(userId).get();
+        
+        if (!userDoc.exists) {
+          return NextResponse.json(
+            { error: 'User not found' },
+            { status: 404 }
+          );
+        }
+      
+        // Return the user data (excluding sensitive information)
+        const userData = userDoc.data();
+        
+        if (!userData) {
+          return NextResponse.json(
+            { error: 'User data is empty' },
+            { status: 404 }
+          );
+        }
+        
+        return NextResponse.json({
+          uid: userData.uid,
+          username: userData.username,
+          displayName: userData.displayName,
+          email: userData.email,
+          enableBlog: userData.enableBlog,
+          customDomain: userData.customDomain,
+        }, { status: 200 });
+      } catch (error) {
+        console.error('Error fetching user data from Firestore:', error);
+        
+        // If we're in development, fall back to mock data
+        if (process.env.NODE_ENV === 'development') {
+          console.log('ME API: Error fetching from Firestore in development, returning mock data');
+          return NextResponse.json({
+            uid: userId,
+            username: 'devuser',
+            displayName: 'Development User',
+            email: 'dev@example.com',
+            enableBlog: true,
+            customDomain: null,
+            _devMode: true
+          }, { status: 200 });
+        }
+        
+        return NextResponse.json(
+          { error: 'Database error', details: error instanceof Error ? error.message : 'Unknown error' },
+          { status: 500 }
+        );
+      }
     } catch (error) {
       console.error('Error verifying session cookie:', error);
       
