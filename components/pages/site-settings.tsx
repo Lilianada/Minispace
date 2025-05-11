@@ -6,12 +6,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Save, Layout, Type, Palette } from "lucide-react"
+import { Save, Layout, Type, Palette, ExternalLink, Eye, Image } from "lucide-react"
 import Link from "next/link"
-import { LayoutPreview } from "./layout-preview"
 import { LayoutSelector } from "./layout-selector"
 import { ThemeSelector } from "./theme-selector"
 import { SiteFont } from "./select-siteFont"
+import { useToast } from "@/components/ui/use-toast"
 
 interface SiteSettingsProps {
   username: string
@@ -37,7 +37,7 @@ export function SiteSettings({
   username,
   headerText,
   setHeaderText,
-  footerText,
+  footerText, // This will now be fixed as "Powered by Minispace"
   setFooterText,
   selectedLayout,
   setSelectedLayout,
@@ -53,6 +53,80 @@ export function SiteSettings({
   isSaving
 }: SiteSettingsProps) {
   const [activeTab, setActiveTab] = useState("general")
+  const [isCreatingPreview, setIsCreatingPreview] = useState(false)
+  const [favicon, setFavicon] = useState<string | null>(null)
+  const { toast } = useToast()
+  
+  // Function to handle favicon upload
+  const handleFaviconUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    
+    // Show preview of the image
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      setFavicon(reader.result as string)
+    }
+    reader.readAsDataURL(file)
+    
+    // In a real implementation, you would upload the file to a server
+    // that would convert it to favicon.ico format
+    // For example:
+    // const formData = new FormData()
+    // formData.append('favicon', file)
+    // fetch('/api/upload-favicon', {
+    //   method: 'POST',
+    //   body: formData
+    // })
+  }
+  
+  // Function to create a temporary preview of the site
+  const handleCreatePreview = async () => {
+    try {
+      setIsCreatingPreview(true)
+      
+      // Create a preview object with all the current settings
+      // Note: footerText is always "Powered by Minispace"
+      const previewSettings = {
+        username,
+        headerText,
+        footerText: "Powered by Minispace", // Always use this value
+        selectedLayout,
+        fontFamily,
+        accentColor,
+        backgroundColor,
+        textColor,
+      }
+      
+      // POST to the preview API to get a preview ID
+      const response = await fetch('/api/preview/settings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(previewSettings),
+      })
+      
+      if (!response.ok) {
+        throw new Error('Failed to create preview')
+      }
+      
+      const data = await response.json()
+      const { previewId } = data
+      
+      // Navigate to the preview page
+      window.open(`/preview/${username}?id=${previewId}`, '_blank')
+    } catch (error) {
+      console.error('Error creating preview:', error)
+      toast({
+        title: "Preview Error",
+        description: "Failed to create preview. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsCreatingPreview(false)
+    }
+  }
 
   return (
     <Card>
@@ -93,13 +167,41 @@ export function SiteSettings({
               <Label htmlFor="footer-text">Footer Text</Label>
               <Input
                 id="footer-text"
-                value={footerText}
-                onChange={(e) => setFooterText(e.target.value)}
-                placeholder={`&copy; ${new Date().getFullYear()} ${username}`}
+                value="Powered by Minispace"
+                disabled
+                readOnly
               />
               <p className="text-xs text-muted-foreground">
-                This will be displayed in the footer of your site
+                All Minispace sites include this footer attribution
               </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="favicon">Favicon</Label>
+              <div className="flex items-center gap-3">
+                <div className="border rounded-md w-12 h-12 flex items-center justify-center">
+                  {favicon ? (
+                    <img
+                      src={favicon}
+                      alt="Favicon preview"
+                      className="max-w-full max-h-full"
+                    />
+                  ) : (
+                    <Image className="h-6 w-6 text-muted-foreground" />
+                  )}
+                </div>
+                <div className="flex-1">
+                  <Input
+                    id="favicon"
+                    type="file"
+                    accept="image/png,image/jpeg,image/jpg,image/svg+xml"
+                    onChange={handleFaviconUpload}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Upload an image (PNG, JPG, or SVG). It will be converted to favicon.ico
+                  </p>
+                </div>
+              </div>
             </div>
           </TabsContent>
           
@@ -140,19 +242,34 @@ export function SiteSettings({
           </TabsContent>
         </Tabs>
         
-        {/* Unified Preview */}
+        {/* Preview and Save Buttons */}
         <div className="mt-8 pt-6 border-t">
-          <h3 className="text-lg font-medium mb-4">Live Preview</h3>
-          <LayoutPreview
-            username={username}
-            selectedLayout={selectedLayout}
-            fontFamily={fontFamily}
-            headerText={headerText}
-            footerText={footerText}
-            accentColor={accentColor}
-            backgroundColor={backgroundColor}
-            textColor={textColor}
-          />
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-medium">Review Changes</h3>
+            <div className="flex gap-3">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleCreatePreview} 
+                disabled={isCreatingPreview}
+              >
+                <Eye className="mr-2 h-4 w-4" />
+                {isCreatingPreview ? 'Loading Preview...' : 'Preview Changes'}
+              </Button>
+              
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => window.open(`https://${username}.minispace.dev`, '_blank')}
+              >
+                <ExternalLink className="mr-2 h-4 w-4" />
+                Visit Live Site
+              </Button>
+            </div>
+          </div>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Preview your changes before saving them to see how they'll look on your site.
+          </p>
         </div>
         
         <Button onClick={onSave} disabled={isSaving} className="w-full mt-6">

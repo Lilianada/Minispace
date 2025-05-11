@@ -2,9 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
-import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore'
+import { collection, query, where, getDocs } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
-import { useAuth } from '@/lib/auth-context'
 import ReactMarkdown from 'react-markdown'
 import { Card, CardContent } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -24,7 +23,7 @@ export default function PageView() {
       try {
         setLoading(true)
         
-        // Use data cache for user lookup
+        // Use data cache for user lookup with a shorter expiration time
         const userId = await getCachedData(
           `user:${username}`,
           async () => {
@@ -38,7 +37,7 @@ export default function PageView() {
             
             return userSnapshot.docs[0].id
           },
-          { expirationTimeMs: 30 * 60 * 1000 } // Cache user ID for 30 minutes
+          { expirationTimeMs: 15 * 60 * 1000 } // Cache user ID for 15 minutes
         ).catch(err => {
           setError('User not found')
           setLoading(false)
@@ -47,7 +46,7 @@ export default function PageView() {
         
         if (!userId) return // Error was already handled
         
-        // Use data cache for page content
+        // Use data cache for page content with a shorter expiration
         const pageData = await getCachedData(
           `page:${userId}:${slug}`,
           async () => {
@@ -67,7 +66,7 @@ export default function PageView() {
               ...pageSnapshot.docs[0].data()
             }
           },
-          { expirationTimeMs: 5 * 60 * 1000 } // Cache page content for 5 minutes
+          { expirationTimeMs: 2 * 60 * 1000 } // Cache page content for 2 minutes for faster updates
         ).catch(err => {
           setError('Page not found')
           setLoading(false)

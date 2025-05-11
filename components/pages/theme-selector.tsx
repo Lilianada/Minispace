@@ -1,13 +1,14 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Paintbrush, Palette, Type, Sun } from "lucide-react"
+import { Paintbrush, Palette, Check, Info } from "lucide-react"
+import { HoverCard, HoverCardTrigger, HoverCardContent } from "@/components/ui/hover-card"
 
 interface ThemeSelectorProps {
   selectedTheme: string
@@ -35,8 +36,9 @@ export function ThemeSelector({
   isSubmitting
 }: ThemeSelectorProps) {
   const [activeTab, setActiveTab] = useState("presets")
+  const [contextualThemes, setContextualThemes] = useState<any[]>([])
   
-  // Predefined theme presets
+  // Predefined theme presets - expanded with more options tailored to specific layout types
   const themePresets = [
     { 
       id: "default", 
@@ -44,7 +46,8 @@ export function ThemeSelector({
       backgroundColor: "#ffffff", 
       textColor: "#000000", 
       accentColor: "#3b82f6",
-      preview: "bg-gradient-to-b from-blue-100 to-blue-50"
+      preview: "bg-gradient-to-b from-blue-100 to-blue-50",
+      bestFor: ["portfolio-grid", "personal-blog", "landing-page", "link-in-bio"]
     },
     { 
       id: "minimal", 
@@ -52,7 +55,8 @@ export function ThemeSelector({
       backgroundColor: "#ffffff", 
       textColor: "#333333", 
       accentColor: "#000000",
-      preview: "bg-white"
+      preview: "bg-white",
+      bestFor: ["portfolio-grid", "notes-zettelkasten", "split-intro"]
     },
     { 
       id: "dark", 
@@ -60,15 +64,17 @@ export function ThemeSelector({
       backgroundColor: "#1f1f1f", 
       textColor: "#ffffff", 
       accentColor: "#60a5fa",
-      preview: "bg-[#1F1F1F]"
+      preview: "bg-[#1F1F1F]",
+      bestFor: ["personal-blog", "link-in-bio", "notes-zettelkasten"]
     },
     { 
-      id: "serif", 
+      id: "sepia", 
       name: "Sepia", 
       backgroundColor: "#f8f5f0", 
       textColor: "#3a3a3a", 
       accentColor: "#8b5cf6",
-      preview: "bg-[#F8F5F0]"
+      preview: "bg-[#F8F5F0]",
+      bestFor: ["personal-blog", "notes-zettelkasten"]
     },
     { 
       id: "mono", 
@@ -76,7 +82,8 @@ export function ThemeSelector({
       backgroundColor: "#f0f0f0", 
       textColor: "#222222", 
       accentColor: "#525252",
-      preview: "bg-[#F0F0F0]"
+      preview: "bg-[#F0F0F0]",
+      bestFor: ["portfolio-grid", "split-intro"]
     },
     { 
       id: "colorful", 
@@ -84,7 +91,8 @@ export function ThemeSelector({
       backgroundColor: "#ffffff", 
       textColor: "#333333", 
       accentColor: "#ec4899",
-      preview: "bg-gradient-to-r from-pink-300 via-purple-300 to-indigo-400"
+      preview: "bg-gradient-to-r from-pink-300 via-purple-300 to-indigo-400",
+      bestFor: ["link-in-bio", "landing-page"]
     },
     { 
       id: "forest", 
@@ -92,7 +100,8 @@ export function ThemeSelector({
       backgroundColor: "#f8faf7", 
       textColor: "#2d3c2d", 
       accentColor: "#4ade80",
-      preview: "bg-gradient-to-b from-green-100 to-green-50"
+      preview: "bg-gradient-to-b from-green-100 to-green-50",
+      bestFor: ["personal-blog", "landing-page"]
     },
     { 
       id: "ocean", 
@@ -100,7 +109,8 @@ export function ThemeSelector({
       backgroundColor: "#f0f7ff", 
       textColor: "#1e3a5f", 
       accentColor: "#0ea5e9",
-      preview: "bg-gradient-to-b from-sky-100 to-blue-50"
+      preview: "bg-gradient-to-b from-sky-100 to-blue-50",
+      bestFor: ["portfolio-grid", "split-intro"]
     },
     { 
       id: "sunset", 
@@ -108,9 +118,55 @@ export function ThemeSelector({
       backgroundColor: "#fff9f5", 
       textColor: "#4a3f35", 
       accentColor: "#f97316",
-      preview: "bg-gradient-to-b from-orange-100 to-amber-50"
+      preview: "bg-gradient-to-b from-orange-100 to-amber-50",
+      bestFor: ["link-in-bio", "landing-page"]
+    },
+    { 
+      id: "night-mode", 
+      name: "Night Mode", 
+      backgroundColor: "#121212", 
+      textColor: "#e0e0e0", 
+      accentColor: "#bb86fc",
+      preview: "bg-[#121212]",
+      bestFor: ["notes-zettelkasten", "personal-blog"]
+    },
+    { 
+      id: "pastel", 
+      name: "Pastel", 
+      backgroundColor: "#fcfaff", 
+      textColor: "#4b5563", 
+      accentColor: "#a78bfa",
+      preview: "bg-gradient-to-b from-purple-50 to-pink-50",
+      bestFor: ["portfolio-grid", "link-in-bio"]
+    },
+    { 
+      id: "brutalist", 
+      name: "Brutalist", 
+      backgroundColor: "#ffffff", 
+      textColor: "#000000", 
+      accentColor: "#ff0000",
+      preview: "bg-white border-2 border-black",
+      bestFor: ["portfolio-grid", "split-intro"]
     }
   ]
+  
+  // Filter and sort themes that work best with the selected layout
+  useEffect(() => {
+    // Parse the selected theme to get the layout type
+    const layoutType = selectedTheme.split('-').slice(0, -1).join('-');
+    
+    // Filter themes that work well with this layout type
+    let relevantThemes = themePresets.filter(theme => 
+      theme.bestFor.includes(layoutType)
+    );
+    
+    // If no specific matches, show all themes
+    if (relevantThemes.length === 0) {
+      relevantThemes = themePresets;
+    }
+    
+    setContextualThemes(relevantThemes);
+  }, [selectedTheme]);
   
   // Apply a preset theme
   const applyThemePreset = (presetId: string) => {
@@ -140,41 +196,76 @@ export function ThemeSelector({
           </TabsList>
           
           <TabsContent value="presets" className="space-y-4 pt-4">
+            <div className="flex items-center mb-4">
+              <h3 className="text-sm font-medium flex items-center">
+                Recommended Themes
+                <HoverCard>
+                  <HoverCardTrigger asChild>
+                    <Info className="h-3.5 w-3.5 ml-1 text-muted-foreground cursor-help" />
+                  </HoverCardTrigger>
+                  <HoverCardContent className="w-80">
+                    <p className="text-sm">These themes work well with your selected layout type.</p>
+                  </HoverCardContent>
+                </HoverCard>
+              </h3>
+            </div>
+            
             <RadioGroup 
               value={selectedTheme} 
               onValueChange={(value) => applyThemePreset(value)}
-              className="grid grid-cols-1 sm:grid-cols-3 gap-4"
+              className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4"
             >
-              {themePresets.map(preset => (
+              {contextualThemes.map(preset => (
                 <Label
                   key={preset.id}
                   htmlFor={`theme-${preset.id}`}
-                  className={`flex flex-col items-center justify-between rounded-md border-2 p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer ${
+                  className={`flex flex-col items-center rounded-md border-2 p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer ${
                     selectedTheme === preset.id ? "border-primary" : "border-muted"
                   }`}
                 >
                   <RadioGroupItem value={preset.id} id={`theme-${preset.id}`} className="sr-only" />
-                  <div className={`w-full h-24 rounded-md border mb-2 ${preset.preview} overflow-hidden`}>
-                    {preset.id === "serif" && (
-                      <div className="h-full w-full flex items-center justify-center font-serif text-xs">
-                        <span className="opacity-50">Serif Typography</span>
-                      </div>
-                    )}
-                    {preset.id === "mono" && (
-                      <div className="h-full w-full flex items-center justify-center font-mono text-xs">
-                        <span className="opacity-50">Monospace Type</span>
-                      </div>
-                    )}
-                    {(preset.id !== "serif" && preset.id !== "mono") && (
-                      <div className="h-full w-full flex flex-col">
-                        <div className="h-6 border-b" style={{ backgroundColor: preset.accentColor }}></div>
-                        <div className="flex-1 flex items-center justify-center" style={{ backgroundColor: preset.backgroundColor }}>
-                          <div className="text-xs" style={{ color: preset.textColor }}>Preview</div>
+                  <div className="relative w-full">
+                    <div className={`w-full h-24 rounded-md border mb-2 ${preset.preview} overflow-hidden`}>
+                      {preset.id === "sepia" && (
+                        <div className="h-full w-full flex items-center justify-center font-serif text-xs">
+                          <span className="opacity-50">Serif Typography</span>
                         </div>
+                      )}
+                      {preset.id === "mono" && (
+                        <div className="h-full w-full flex items-center justify-center font-mono text-xs">
+                          <span className="opacity-50">Monospace Type</span>
+                        </div>
+                      )}
+                      {preset.id === "brutalist" && (
+                        <div className="h-full w-full flex items-center justify-center">
+                          <span className="text-xs font-mono uppercase">BRUTALIST</span>
+                        </div>
+                      )}
+                      {(preset.id !== "sepia" && preset.id !== "mono" && preset.id !== "brutalist") && (
+                        <div className="h-full w-full flex flex-col">
+                          <div className="h-6 border-b" style={{ backgroundColor: preset.accentColor }}></div>
+                          <div className="flex-1 flex items-center justify-center" style={{ backgroundColor: preset.backgroundColor }}>
+                            <div className="text-xs" style={{ color: preset.textColor }}>Preview</div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {selectedTheme === preset.id && (
+                      <div className="absolute top-1 right-1 bg-primary text-primary-foreground rounded-full p-0.5">
+                        <Check className="h-3 w-3" />
                       </div>
                     )}
                   </div>
-                  <span>{preset.name}</span>
+                  
+                  <div className="w-full text-center">
+                    <div className="font-medium text-sm">{preset.name}</div>
+                    <div className="flex items-center justify-center gap-1.5 mt-1">
+                      <div className="w-4 h-4 rounded-full border" style={{ backgroundColor: preset.backgroundColor }}></div>
+                      <div className="w-4 h-4 rounded-full border" style={{ backgroundColor: preset.accentColor }}></div>
+                      <div className="w-4 h-4 rounded-full border" style={{ backgroundColor: preset.textColor }}></div>
+                    </div>
+                  </div>
                 </Label>
               ))}
             </RadioGroup>
@@ -272,6 +363,12 @@ export function ThemeSelector({
                       This is a link
                     </span>
                   </div>
+                  <div 
+                    className="mt-3 inline-block px-3 py-1 text-sm rounded"
+                    style={{ backgroundColor: accentColor, color: backgroundColor }}
+                  >
+                    Button
+                  </div>
                 </div>
               </div>
             </div>
@@ -279,8 +376,8 @@ export function ThemeSelector({
         </Tabs>
       </CardContent>
       <CardFooter>
-        <Button onClick={onSave} disabled={isSubmitting}>
-          {isSubmitting ? 'Saving...' : 'Save Theme'}
+        <Button onClick={onSave} disabled={isSubmitting} className="w-full">
+          {isSubmitting ? 'Saving...' : 'Apply Theme'}
         </Button>
       </CardFooter>
     </Card>

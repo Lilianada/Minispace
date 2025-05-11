@@ -22,6 +22,7 @@ export interface Page {
   isHomePage: boolean
   createdAt: any
   updatedAt: any
+  layout?: string // Add layout property for per-page layout selection
 }
 
 interface PageListProps {

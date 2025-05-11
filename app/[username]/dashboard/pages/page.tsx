@@ -28,6 +28,7 @@ export default function PagesPage() {
     setSlug(page.slug);
     setContent(page.content || "");
     setIsHomePage(!!page.isHomePage);
+    setPageLayout(page.layout || "landing-page"); // Set the page-specific layout
     setShowEditDialog(true);
   };
 
@@ -55,9 +56,18 @@ export default function PagesPage() {
         updatedAt: serverTimestamp()
       });
       setPages(prev => prev.map(p => ({ ...p, isHomePage: p.id === page.id })));
-      toast({ title: "Homepage set", description: `"${page.title}" is now your homepage.` });
+      toast({
+        title: "Homepage set",
+        description: `"${page.title}" is now your homepage.`,
+        duration: 3000
+      });
     } catch (error) {
-      toast({ title: "Error", description: "Failed to set homepage.", variant: "destructive" });
+      toast({
+        title: "Error",
+        description: "Failed to set homepage.",
+        variant: "destructive",
+        duration: 3000
+      });
     }
   };
 
@@ -79,9 +89,10 @@ export default function PagesPage() {
   const [slug, setSlug] = useState("");
   const [content, setContent] = useState("");
   const [isHomePage, setIsHomePage] = useState(false);
+  const [pageLayout, setPageLayout] = useState("landing-page"); // For per-page layout
   const [headerText, setHeaderText] = useState("");
   const [footerText, setFooterText] = useState("");
-  // Layout and theme selection states
+  // Layout and theme selection states - this is the global theme
   const [selectedLayout, setSelectedLayout] = useState("classic-columnist")
   // Dialog states
   const [showEditDialog, setShowEditDialog] = useState(false);
@@ -152,6 +163,7 @@ export default function PagesPage() {
           title: "Error",
           description: "Failed to load pages. Please try again.",
           variant: "destructive",
+          duration: 3000
         });
       } finally {
         setIsLoading(false);
@@ -169,6 +181,7 @@ export default function PagesPage() {
         title: "Missing fields",
         description: "Please provide both a title and URL path.",
         variant: "destructive",
+        duration: 3000
       });
       return;
     }
@@ -179,6 +192,7 @@ export default function PagesPage() {
         title: "Invalid URL path",
         description: "URL path can only contain lowercase letters, numbers, and hyphens.",
         variant: "destructive",
+        duration: 3000
       });
       return;
     }
@@ -190,6 +204,7 @@ export default function PagesPage() {
         title: "URL path already exists",
         description: "Please choose a different URL path.",
         variant: "destructive",
+        duration: 3000
       });
       return;
     }
@@ -208,11 +223,12 @@ export default function PagesPage() {
         }
       }
 
-      // Update page
+      // Update page with the new layout
       await updateDoc(doc(db, `Users/${user.uid}/pages`, currentPage.id), {
         title,
         slug,
         content,
+        layout: pageLayout,
         isHomePage: isHomePage || false, // Ensure isHomePage is never undefined
         updatedAt: serverTimestamp()
       });
@@ -225,7 +241,15 @@ export default function PagesPage() {
 
         return updated.map(page =>
           page.id === currentPage.id
-            ? { ...page, title, slug, content, isHomePage, updatedAt: new Date() }
+            ? { 
+                ...page, 
+                title, 
+                slug, 
+                content, 
+                layout: pageLayout, 
+                isHomePage, 
+                updatedAt: new Date() 
+              }
             : page
         ).sort((a, b) => {
           if (a.isHomePage) return -1;
@@ -239,6 +263,7 @@ export default function PagesPage() {
       toast({
         title: "Page updated",
         description: "Your page has been updated successfully.",
+        duration: 3000
       });
     } catch (error) {
       console.error("Error updating page:", error);
@@ -246,6 +271,7 @@ export default function PagesPage() {
         title: "Error",
         description: "Failed to update page. Please try again.",
         variant: "destructive",
+        duration: 3000
       });
     } finally {
       setIsEditing(false);
@@ -257,12 +283,13 @@ export default function PagesPage() {
 
     try {
       setIsSaving(true);
-      // Update user document with header, footer, layout and theme settings
+      // Update user document with header, footer, and theme settings
+      // Note: selectedLayout is now for global theme only, not page layouts
       const userDocRef = doc(db, `Users/${user.uid}`);
       await updateDoc(userDocRef, {
         headerText,
         footerText,
-        selectedLayout,
+        selectedLayout, // This is now the global theme
         fontFamily,
         accentColor,
         backgroundColor,
@@ -272,6 +299,7 @@ export default function PagesPage() {
       toast({
         title: "Settings Updated",
         description: "Your site settings have been updated successfully.",
+        duration: 3000
       });
     } catch (error) {
       console.error("Error updating site settings:", error);
@@ -279,6 +307,7 @@ export default function PagesPage() {
         title: "Error",
         description: "Failed to update site settings. Please try again.",
         variant: "destructive",
+        duration: 3000
       });
     } finally {
       setIsSaving(false);
@@ -300,6 +329,7 @@ export default function PagesPage() {
       toast({
         title: "Page deleted",
         description: "Your page has been deleted successfully.",
+        duration: 3000
       });
     } catch (error) {
       console.error("Error deleting page:", error);
@@ -307,11 +337,10 @@ export default function PagesPage() {
         title: "Error",
         description: "Failed to delete page. Please try again.",
         variant: "destructive",
+        duration: 3000
       });
     }
   };
-
-
 
   // Function to save theme selection
   const saveThemeSelection = async () => {
@@ -328,6 +357,7 @@ export default function PagesPage() {
       toast({
         title: "Theme saved",
         description: "Your theme has been updated successfully.",
+        duration: 3000
       });
     } catch (error) {
       console.error("Error saving theme:", error);
@@ -335,11 +365,13 @@ export default function PagesPage() {
         title: "Error",
         description: "Failed to save theme. Please try again.",
         variant: "destructive",
+        duration: 3000
       });
     } finally {
       setIsSubmitting(false);
     }
   };
+  
   // Function to save style preferences
     const saveStylePreferences = async () => {
       if (!user) return;
@@ -355,6 +387,7 @@ export default function PagesPage() {
         toast({
           title: "Appearance saved",
           description: "Your appearance settings have been updated successfully.",
+          duration: 3000
         });
       } catch (error) {
         console.error("Error saving style preferences:", error);
@@ -362,6 +395,7 @@ export default function PagesPage() {
           title: "Error",
           description: "Failed to save appearance settings. Please try again.",
           variant: "destructive",
+          duration: 3000
         });
       } finally {
         setIsSubmitting(false);
@@ -374,6 +408,7 @@ export default function PagesPage() {
     setSlug(page.slug);
     setContent(page.content);
     setIsHomePage(page.isHomePage);
+    setPageLayout(page.layout || "landing-page");
     setShowEditDialog(true);
   };
 
@@ -454,6 +489,8 @@ export default function PagesPage() {
             setContent={setContent}
             isHomePage={isHomePage}
             setIsHomePage={setIsHomePage}
+            layout={pageLayout}
+            setLayout={setPageLayout}
           />
         )}
         {/* Delete Page Dialog */}

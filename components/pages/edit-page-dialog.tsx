@@ -15,6 +15,7 @@ import {
   DialogTitle 
 } from "@/components/ui/dialog"
 import { Page } from "./page-list"
+import { LayoutSelector } from "./layout-selector"
 
 interface EditPageDialogProps {
   open: boolean
@@ -31,6 +32,8 @@ interface EditPageDialogProps {
   setContent: (content: string) => void
   isHomePage: boolean
   setIsHomePage: (isHomePage: boolean) => void
+  layout: string
+  setLayout: (layout: string) => void
 }
 
 export function EditPageDialog({
@@ -47,11 +50,13 @@ export function EditPageDialog({
   content,
   setContent,
   isHomePage,
-  setIsHomePage
+  setIsHomePage,
+  layout,
+  setLayout
 }: EditPageDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="max-w-4xl">
         <DialogHeader>
           <DialogTitle>Edit Page</DialogTitle>
           <DialogDescription>
@@ -104,6 +109,19 @@ export function EditPageDialog({
             <Label htmlFor="edit-isHomePage" className={page?.isHomePage ? "text-muted-foreground" : ""}>
               {page?.isHomePage ? "This is your home page" : "Set as home page"}
             </Label>
+          </div>
+
+          <div className="pt-4 border-t">
+            <Label className="text-base font-semibold mb-2 block">Page Layout</Label>
+            <p className="text-sm text-muted-foreground mb-4">
+              Choose a specific layout for this page. Each page can have its own layout, while your theme style applies to all pages.
+            </p>
+            <LayoutSelector
+              selectedLayout={layout || "landing-page"}
+              setSelectedLayout={setLayout}
+              onSave={() => {}}
+              isSubmitting={false}
+            />
           </div>
         </div>
         
