@@ -171,8 +171,14 @@ function initializeWithProjectId(): boolean {
 /**
  * Get the Firebase Admin app instance
  * This is a lazy-loaded singleton to avoid initializing Firebase Admin unnecessarily
+ * @returns An object containing the Firebase Admin app, auth, firestore, and db (alias for firestore)
  */
-export function getAdminApp() {
+export function getAdminApp(): {
+  app: admin.app.App | undefined;
+  auth: admin.auth.Auth | undefined;
+  firestore: admin.firestore.Firestore | undefined; 
+  db: admin.firestore.Firestore | undefined;
+} {
   // Only initialize if not already done
   if (!isInitialized) {
     console.log('Initializing Firebase Admin...');
@@ -189,6 +195,8 @@ export function getAdminApp() {
     app: firebaseAdmin,
     auth: firebaseAdmin ? firebaseAdmin.auth() : undefined,
     firestore: firebaseAdmin ? firebaseAdmin.firestore() : undefined,
+    // Add db alias for firestore for backwards compatibility
+    db: firebaseAdmin ? firebaseAdmin.firestore() : undefined,
   };
 };
 
@@ -219,6 +227,11 @@ export async function verifySessionCookie(sessionCookie: string | undefined) {
   try {
     // Get the admin app instance
     const adminApp = getAdminApp();
+    
+    if (!adminApp.auth) {
+      console.error('Firebase Admin auth is not properly initialized');
+      return null;
+    }
     
     // Verify the session cookie
     const decodedClaims = await adminApp.auth.verifySessionCookie(sessionCookie, true);
