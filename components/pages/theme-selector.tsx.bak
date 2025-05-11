@@ -152,13 +152,8 @@ export function ThemeSelector({
   
   // Filter and sort themes that work best with the selected layout
   useEffect(() => {
-    if (!selectedTheme) {
-      setContextualThemes(themePresets);
-      return;
-    }
-    
-    // Parse the selected theme to get the layout type
-    const layoutType = selectedTheme.split('-').slice(0, -1).join('-');
+    // Parse the selected theme to get the layout type, handling undefined
+    const layoutType = selectedTheme?.split('-')?.slice(0, -1)?.join('-') || 'default';
     
     // Filter themes that work well with this layout type
     let relevantThemes = themePresets.filter(theme => 
@@ -171,7 +166,7 @@ export function ThemeSelector({
     }
     
     setContextualThemes(relevantThemes);
-  }, [selectedTheme, themePresets]);
+  }, [selectedTheme]);
   
   // Apply a preset theme
   const applyThemePreset = (presetId: string) => {

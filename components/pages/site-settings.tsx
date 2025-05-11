@@ -69,15 +69,6 @@ export function SiteSettings({
     }
     reader.readAsDataURL(file)
     
-    // In a real implementation, you would upload the file to a server
-    // that would convert it to favicon.ico format
-    // For example:
-    // const formData = new FormData()
-    // formData.append('favicon', file)
-    // fetch('/api/upload-favicon', {
-    //   method: 'POST',
-    //   body: formData
-    // })
   }
   
   // Function to create a temporary preview of the site
