@@ -6,7 +6,9 @@ import { getAuthenticatedUser } from '@/lib/auth-utils';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { FileText, Edit, Eye, Settings, Palette, Globe } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { FileText, Edit, Eye, Settings, Palette, Globe, LayoutDashboard } from 'lucide-react';
 
 export default async function DashboardPage({ params }: { params: { username: string } }) {
   // In Next.js 13+, dynamic params should be properly awaited
@@ -35,6 +37,20 @@ export default async function DashboardPage({ params }: { params: { username: st
   );
   
   const postsSnapshot = await getDocs(postsQuery);
+  
+  // Fetch total pages
+  const pagesRef = collection(db, `Users/${userId}/pages`);
+  const pagesQuery = query(pagesRef);
+  const pagesSnapshot = await getDocs(pagesQuery);
+  
+  // Pages stats
+  const totalPages = pagesSnapshot.size;
+  const publishedPages = pagesSnapshot.docs.filter(doc => {
+    const data = doc.data();
+    return data.isHomepage || data.isPublished;
+  }).length;
+  const draftPages = totalPages - publishedPages;
+  const homePage = pagesSnapshot.docs.find(doc => doc.data().isHomepage);
   
   // Create a function to safely convert Firestore data to plain objects
   function convertFirestoreData(data: any) {
@@ -88,6 +104,27 @@ export default async function DashboardPage({ params }: { params: { username: st
   const publishedPosts = recentPosts.filter((post: any) => post.published).length;
   const draftPosts = totalPosts - publishedPosts;
   
+  // Convert Firestore pages to safe plain objects
+  const recentPages = pagesSnapshot.docs
+    .map(doc => {
+      const data = doc.data();
+      const safeData = convertFirestoreData(data);
+      
+      return {
+        id: doc.id,
+        ...safeData,
+        // Ensure consistent property names for our UI
+        isHomePage: safeData.isHomepage || false,
+        published: safeData.isHomepage ? true : (safeData.isPublished || false)
+      };
+    })
+    .sort((a, b) => {
+      if (a.isHomePage) return -1;
+      if (b.isHomePage) return 1;
+      return 0;
+    })
+    .slice(0, 3); // Only get 3 most recent pages
+  
   return (
     <div className="space-y-4">
       <div>
@@ -96,6 +133,16 @@ export default async function DashboardPage({ params }: { params: { username: st
           Manage your blog and content
         </p>
       </div>
+      
+      {/* Preview notification */}
+      <Alert>
+        <Eye className="h-4 w-4" />
+        <AlertTitle>Preview functionality improved</AlertTitle>
+        <AlertDescription>
+          The page preview feature has been enhanced. When editing pages, you can now use both in-app preview and 
+          full-page preview in a new tab.
+        </AlertDescription>
+      </Alert>
       
       {/* Quick stats */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -114,17 +161,13 @@ export default async function DashboardPage({ params }: { params: { username: st
         
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Blog Status</CardTitle>
-            <Eye className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Total Pages</CardTitle>
+            <LayoutDashboard className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-base font-bold">
-              {userData?.enableBlog ? 'Active' : 'Inactive'}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {userData?.enableBlog 
-                ? `Live at ${username}.minispace.dev` 
-                : 'Blog is currently disabled'}
+            <div className="text-base font-bold">{totalPages}</div>
+            <p className="text-sm text-muted-foreground">
+              {publishedPages} published, {draftPages} drafts
             </p>
           </CardContent>
         </Card>
@@ -146,7 +189,7 @@ export default async function DashboardPage({ params }: { params: { username: st
       </div>
       
       {/* Quick actions */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
         <Button asChild className="h-auto flex-col gap-2 p-3">
           <Link href={`/${username}/dashboard/posts/new`}>
             <Edit className="h-5 w-5" />
@@ -158,6 +201,13 @@ export default async function DashboardPage({ params }: { params: { username: st
           <Link href={`/${username}/dashboard/posts`}>
             <FileText className="h-5 w-5" />
             <span>Manage Posts</span>
+          </Link>
+        </Button>
+        
+        <Button asChild variant="outline" className="h-auto flex-col gap-2 p-3">
+          <Link href={`/${username}/dashboard/pages`}>
+            <LayoutDashboard className="h-5 w-5" />
+            <span>Manage Pages</span>
           </Link>
         </Button>
         
@@ -175,6 +225,15 @@ export default async function DashboardPage({ params }: { params: { username: st
           </Link>
         </Button>
       </div>
+      
+      {/* Notification about improved preview functionality */}
+      <Alert>
+        <AlertTitle className="font-medium">New Preview Feature!</AlertTitle>
+        <AlertDescription>
+          You can now preview your posts and pages with the new improved preview functionality. 
+          Check it out in the post and page editor.
+        </AlertDescription>
+      </Alert>
       
       {/* Recent posts */}
       <div>
@@ -220,6 +279,60 @@ export default async function DashboardPage({ params }: { params: { username: st
               <Button asChild>
                 <Link href={`/${username}/dashboard/posts/new`}>
                   Create Your First Post
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+      
+      {/* Recent pages */}
+      <div>
+        <h2 className="text-lg font-semibold mb-3">Recent Pages</h2>
+        {recentPages.length > 0 ? (
+          <div className="space-y-4">
+            {recentPages.map((page: any) => (
+              <Card key={page.id}>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base font-medium">
+                    {page.title}
+                    {page.isHomePage && (
+                      <Badge variant="outline" className="ml-2 bg-primary/20 text-primary border-primary/40">
+                        Home
+                      </Badge>
+                    )}
+                  </CardTitle>
+                  <CardDescription>
+                    {page.slug && `/${page.slug}`}
+                  </CardDescription>
+                </CardHeader>
+                <CardFooter className="pt-2">
+                  <div className="flex gap-2">
+                    <Button asChild size="sm" variant="outline">
+                      <Link href={`/${username}/dashboard/pages/edit/${page.id}`}>
+                        Edit
+                      </Link>
+                    </Button>
+                    <Button asChild size="sm" variant="ghost">
+                      <Link href={`https://${username}.minispace.dev/${page.slug}`} target="_blank">
+                        View
+                      </Link>
+                    </Button>
+                  </div>
+                </CardFooter>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <Card className="p-6 text-center">
+            <CardContent className="pt-4 pb-6">
+              <h3 className="text-base font-medium mb-2">No pages yet</h3>
+              <p className="text-xs text-muted-foreground mb-4">
+                Create your first page to start building your site
+              </p>
+              <Button asChild>
+                <Link href={`/${username}/dashboard/pages/new`}>
+                  Create Your First Page
                 </Link>
               </Button>
             </CardContent>

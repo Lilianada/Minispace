@@ -316,7 +316,7 @@ export default function PostPage() {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem
-                        onClick={() => router.push(`/${userData?.username}/dashboard/edit/${article.id}`)}
+                        onClick={() => router.push(`/${userData?.username}/dashboard/posts/edit/${article.id}`)}
                       >
                         Edit
                       </DropdownMenuItem>
@@ -381,7 +381,7 @@ export default function PostPage() {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem
-                        onClick={() => router.push(`/${userData?.username}/dashboard/edit/${article.id}`)}
+                        onClick={() => router.push(`/${userData?.username}/dashboard/posts/edit/${article.id}`)}
                       >
                         Edit
                       </DropdownMenuItem>

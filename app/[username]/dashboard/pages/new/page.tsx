@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
 import { collection, addDoc, serverTimestamp, doc, setDoc } from "firebase/firestore"
 import { db } from "@/lib/firebase"
+import { generatePreviewId, getPreviewUrl } from "@/lib/preview-utils"
 import { Page, ContentBlock, PageStyles } from "@/lib/types"
 import { MarkdownEditor } from "@/components/markdown-editor"
 import ReactMarkdown from "react-markdown"
@@ -80,6 +81,8 @@ export default function NewPagePage() {
   
   // Preview state
   const [showPreview, setShowPreview] = useState(false)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [isPreviewLoading, setIsPreviewLoading] = useState(false)
   
   // Update slug based on title
   useEffect(() => {
@@ -218,8 +221,52 @@ export default function NewPagePage() {
     }
   }
   
-  const togglePreview = () => {
-    setShowPreview(!showPreview)
+  const togglePreview = async () => {
+    // For simple previews, just toggle the state
+    if (showPreview) {
+      setShowPreview(false)
+      return
+    }
+    
+    // For the first preview, use the simple in-page preview
+    setShowPreview(true)
+    
+    // Also prepare a full preview in a new window
+    try {
+      setIsPreviewLoading(true)
+      
+      // Create preview settings based on current page data
+      const previewSettings = {
+        title,
+        content,
+        layout: metadata.layout,
+        styles: {
+          backgroundColor: metadata.backgroundColor,
+          textColor: metadata.textColor,
+          fontFamily: metadata.fontFamily,
+          fontSize: metadata.fontSize
+        }
+      }
+      
+      // Generate a preview ID
+      const previewId = await generatePreviewId(username, previewSettings)
+      
+      // Get the preview URL
+      const url = getPreviewUrl(username, previewId)
+      setPreviewUrl(url)
+      
+      // Open the preview in a new tab
+      window.open(url, '_blank')
+    } catch (error) {
+      console.error("Error generating preview:", error)
+      toast({
+        title: "Preview Error",
+        description: "Failed to generate page preview. Please try again.",
+        variant: "destructive"
+      })
+    } finally {
+      setIsPreviewLoading(false)
+    }
   }
   
   if (!user || loading) {
@@ -257,9 +304,10 @@ export default function NewPagePage() {
             size="sm"
             onClick={togglePreview}
             className="h-8"
+            disabled={isPreviewLoading}
           >
             <Eye className="h-4 w-4 mr-1" />
-            {showPreview ? "Edit" : "Preview"}
+            {isPreviewLoading ? "Loading..." : showPreview ? "Edit" : "Preview"}
           </Button>
           
           <Button 

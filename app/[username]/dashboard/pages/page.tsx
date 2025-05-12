@@ -23,13 +23,7 @@ export default function PagesPage() {
 
   // Handler for editing a page: opens the edit dialog and sets the current page
   const handleEditPageClick = (page: Page) => {
-    setCurrentPage(page);
-    setTitle(page.title);
-    setSlug(page.slug);
-    setContent(page.content || "");
-    setIsHomePage(!!page.isHomePage);
-    setPageLayout(page.layout || "landing-page"); // Set the page-specific layout
-    setShowEditDialog(true);
+    router.push(`/${username}/dashboard/pages/edit/${page.id}`);
   };
 
   // Handler for deleting a page: opens the delete dialog and sets the current page
@@ -46,16 +40,21 @@ export default function PagesPage() {
       const homePages = pages.filter(p => p.isHomePage);
       for (const homePage of homePages) {
         await updateDoc(doc(db, `Users/${user.uid}/pages`, homePage.id), {
-          isHomePage: false,
+          isHomepage: false,
           updatedAt: serverTimestamp()
         });
       }
       // Set selected page as homepage
       await updateDoc(doc(db, `Users/${user.uid}/pages`, page.id), {
-        isHomePage: true,
+        isHomepage: true,
+        isPublished: true, // Ensure homepage is always published
         updatedAt: serverTimestamp()
       });
-      setPages(prev => prev.map(p => ({ ...p, isHomePage: p.id === page.id })));
+      setPages(prev => prev.map(p => ({ 
+        ...p, 
+        isHomePage: p.id === page.id, 
+        published: p.id === page.id ? true : p.published 
+      })));
       toast({
         title: "Homepage set",
         description: `"${page.title}" is now your homepage.`,
@@ -65,6 +64,52 @@ export default function PagesPage() {
       toast({
         title: "Error",
         description: "Failed to set homepage.",
+        variant: "destructive",
+        duration: 3000
+      });
+    }
+  };
+
+  // Handler for toggling publish/unpublish
+  const handlePublishToggle = async (page: Page) => {
+    if (!user) return;
+    
+    // Cannot unpublish homepage
+    if (page.isHomePage && page.published) {
+      toast({
+        title: "Cannot unpublish homepage",
+        description: "Your homepage must remain published.",
+        variant: "destructive",
+        duration: 3000
+      });
+      return;
+    }
+    
+    try {
+      // Toggle published state
+      const newPublishedState = !page.published;
+      
+      await updateDoc(doc(db, `Users/${user.uid}/pages`, page.id), {
+        isPublished: newPublishedState,
+        updatedAt: serverTimestamp()
+      });
+      
+      // Update local state
+      setPages(prev => prev.map(p => 
+        p.id === page.id ? { ...p, published: newPublishedState } : p
+      ));
+      
+      toast({
+        title: newPublishedState ? "Page published" : "Page unpublished",
+        description: newPublishedState 
+          ? `"${page.title}" is now visible to visitors.`
+          : `"${page.title}" is now hidden from visitors.`,
+        duration: 3000
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update page status.",
         variant: "destructive",
         duration: 3000
       });
@@ -116,10 +161,16 @@ export default function PagesPage() {
         const pagesQuery = query(pagesRef);
 
         const querySnapshot = await getDocs(pagesQuery);
-        const fetchedPages = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        })) as Page[];
+        const fetchedPages = querySnapshot.docs.map(doc => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            ...data,
+            // Ensure consistent property names for our UI
+            isHomePage: data.isHomepage || false,
+            published: data.isHomepage ? true : (data.isPublished || false)
+          };
+        }) as Page[];
 
         // Sort pages with home page first, then alphabetically
         fetchedPages.sort((a, b) => {
@@ -448,6 +499,7 @@ export default function PagesPage() {
               onEditPage={handleEditPageClick}
               onDeletePage={handleDeletePageClick}
               onSetHomePage={handleSetHomePage}
+              onPublishToggle={handlePublishToggle}
             />
           </TabsContent>
           <TabsContent value="settings">
@@ -472,27 +524,7 @@ export default function PagesPage() {
             />
           </TabsContent>
         </Tabs>
-        {/* Edit Page Dialog */}
-        {currentPage && (
-          <EditPageDialog
-            open={showEditDialog}
-            onOpenChange={setShowEditDialog}
-            page={currentPage}
-            username={username}
-            isEditing={isEditing}
-            onSave={handleEditPage}
-            title={title}
-            setTitle={setTitle}
-            slug={slug}
-            setSlug={setSlug}
-            content={content}
-            setContent={setContent}
-            isHomePage={isHomePage}
-            setIsHomePage={setIsHomePage}
-            layout={pageLayout}
-            setLayout={setPageLayout}
-          />
-        )}
+
         {/* Delete Page Dialog */}
         {currentPage && (
           <DeletePageDialog
