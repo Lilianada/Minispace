@@ -4,7 +4,7 @@ import { useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { MoreHorizontal, Edit, Trash2, Home, ExternalLink } from "lucide-react"
+import { MoreHorizontal, Edit, Trash2, Home, ExternalLink, Check, X } from "lucide-react"
 import Link from "next/link"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
@@ -13,6 +13,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { 
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 export interface Page {
   id: string
@@ -23,6 +29,7 @@ export interface Page {
   createdAt: any
   updatedAt: any
   layout?: string // Add layout property for per-page layout selection
+  published?: boolean
 }
 
 interface PageListProps {
@@ -32,6 +39,7 @@ interface PageListProps {
   onEditPage: (page: Page) => void
   onDeletePage: (page: Page) => void
   onSetHomePage: (page: Page) => void
+  onPublishToggle?: (page: Page) => void
 }
 
 export function PageList({ 
@@ -40,7 +48,8 @@ export function PageList({
   username, 
   onEditPage, 
   onDeletePage, 
-  onSetHomePage 
+  onSetHomePage,
+  onPublishToggle
 }: PageListProps) {
   // Helper function to format dates
   const formatDate = (date: any) => {
@@ -126,15 +135,34 @@ export function PageList({
 
             {/* Status */}
             <div className="col-span-1 flex justify-center">
-              {page.isHomePage ? (
-                <Badge variant="outline" className="bg-primary/20 text-primary border-primary/40">
-                  Published
-                </Badge>
-              ) : (
-                <Badge variant="outline" className="bg-muted text-muted-foreground">
-                  Draft
-                </Badge>
-              )}
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger>
+                    {page.isHomePage ? (
+                      <Badge variant="outline" className="bg-primary/20 text-primary border-primary/40">
+                        <Check className="h-3 w-3 mr-1" />
+                        Published (Home)
+                      </Badge>
+                    ) : page.published ? (
+                      <Badge variant="outline" className="bg-green-100 text-green-600 border-green-300">
+                        <Check className="h-3 w-3 mr-1" />
+                        Published
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="bg-muted text-muted-foreground">
+                        Draft
+                      </Badge>
+                    )}
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {page.isHomePage 
+                      ? "This is your home page and is always published"
+                      : page.published 
+                        ? "This page is visible to visitors" 
+                        : "This page is only visible to you"}
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </div>
 
             {/* Last Updated */}
@@ -151,9 +179,11 @@ export function PageList({
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => onEditPage(page)}>
-                    <Edit className="h-4 w-4 mr-2" />
-                    Edit
+                  <DropdownMenuItem asChild>
+                    <Link href={`/${username}/dashboard/pages/edit/${page.id}`}>
+                      <Edit className="h-4 w-4 mr-2" />
+                      Edit
+                    </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem 
                     onClick={() => window.open(`https://${username}.minispace.dev/${page.slug}`, '_blank')}
@@ -167,6 +197,19 @@ export function PageList({
                         <Home className="h-4 w-4 mr-2" />
                         Set as Homepage
                       </DropdownMenuItem>
+                      {onPublishToggle && (
+                        page.published ? (
+                          <DropdownMenuItem onClick={() => onPublishToggle(page)}>
+                            <X className="h-4 w-4 mr-2" />
+                            Unpublish
+                          </DropdownMenuItem>
+                        ) : (
+                          <DropdownMenuItem onClick={() => onPublishToggle(page)}>
+                            <Check className="h-4 w-4 mr-2" />
+                            Publish
+                          </DropdownMenuItem>
+                        )
+                      )}
                       <DropdownMenuItem onClick={() => onDeletePage(page)} className="text-red-500 focus:text-red-500">
                         <Trash2 className="h-4 w-4 mr-2" />
                         Delete
