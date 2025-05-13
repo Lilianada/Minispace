@@ -326,7 +326,7 @@ export default function EditPost() {
 
   return (
     <>
-      <div className="container mx-auto py-6 max-w-4xl">
+      <div className=" mx-auto py-6">
         <header className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
             <TooltipProvider>
@@ -345,7 +345,7 @@ export default function EditPost() {
                 <TooltipContent>Back</TooltipContent>
               </Tooltip>
             </TooltipProvider>
-            <h1 className="text-2xl font-semibold">Edit Post</h1>
+            <h1 className="text-lg font-semibold">Edit Post</h1>
           </div>
 
           <div className="flex items-center gap-2">
@@ -371,9 +371,9 @@ export default function EditPost() {
           </div>
         </header>
 
-        <Card className="overflow-hidden border-none shadow-md">
+        <Card className="overflow-hidden border-none shadow-none">
           <CardContent className="p-6 space-y-6">
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between items-end">
               <div className="flex-1">
                 <div className="flex items-center justify-between mb-2">
                   <Label htmlFor="title" className="text-base font-medium">
@@ -393,49 +393,7 @@ export default function EditPost() {
                 )}
               </div>
 
-              <div className="ml-4 flex items-center">
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <div className="flex items-center space-x-2 rounded-md border p-2">
-                        <Switch
-                          checked={published}
-                          onCheckedChange={handlePublishToggle}
-                          id="publish-status"
-                          disabled={isSubmitting}
-                        />
-                        <Label
-                          htmlFor="publish-status"
-                          className="font-medium text-sm flex items-center"
-                        >
-                          {published ? (
-                            <>
-                              <span className="text-green-500 flex items-center">
-                                <Check className="h-3 w-3 mr-1" />
-                                Published
-                              </span>
-                            </>
-                          ) : (
-                            <>
-                              <span className="text-muted-foreground">
-                                Draft
-                              </span>
-                            </>
-                          )}
-                        </Label>
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      {published
-                        ? "This post is published and visible to visitors"
-                        : "This post is a draft and only visible to you"}
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
             </div>
-
-            <Separator />
 
             <div>
               <div className="flex items-center justify-between mb-2">
@@ -599,7 +557,8 @@ export default function EditPost() {
             </div>
           </CardContent>
 
-          <CardFooter className="flex justify-between border-t px-6 py-4 bg-muted/20">
+          <CardFooter className="flex justify-between border-t p-0 py-4 bg-muted/20">
+           <div className="flex gap-2">
             <Button
               variant="outline"
               onClick={handleNavigateAway}
@@ -607,6 +566,47 @@ export default function EditPost() {
             >
               Cancel
             </Button>
+              <div className="ml-4 flex items-center">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="flex items-center space-x-2 rounded-md border p-2">
+                        <Switch
+                          checked={published}
+                          onCheckedChange={handlePublishToggle}
+                          id="publish-status"
+                          disabled={isSubmitting}
+                        />
+                        <Label
+                          htmlFor="publish-status"
+                          className="font-medium text-sm flex items-center"
+                        >
+                          {published ? (
+                            <>
+                              <span className="text-green-500 flex items-center">
+                                <Check className="h-3 w-3 mr-1" />
+                                Published
+                              </span>
+                            </>
+                          ) : (
+                            <>
+                              <span className="text-muted-foreground">
+                                Draft
+                              </span>
+                            </>
+                          )}
+                        </Label>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      {published
+                        ? "This post is published and visible to visitors"
+                        : "This post is a draft and only visible to you"}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+           </div>
             <Button
               onClick={handleSubmit}
               disabled={isSubmitting}

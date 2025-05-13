@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "@/components/ui/toaster"
 import { AuthProvider } from "@/lib/auth-context"
 import { FirebaseInitializer } from "@/components/firebase-initializer"
+import SessionGuard from "@/components/session-guard"
 
 export default function RootLayout({
   children,
@@ -59,11 +60,13 @@ export default function RootLayout({
         <FirebaseInitializer />
         <AuthProvider>
           <ThemeProvider attribute="class" defaultTheme="dark" themes={['dark']} enableSystem={false} disableTransitionOnChange>
-            <div className=" max-w-4xl mx-auto w-full flex relative min-h-screen">
-            <main className="flex-1 flex flex-col border-x border-border">
-              {children}
-              </main>
-            </div>
+            <SessionGuard>
+              <div className="max-w-4xl mx-auto w-full flex relative min-h-screen">
+                <main className="flex-1 flex flex-col border-x border-border">
+                  {children}
+                </main>
+              </div>
+            </SessionGuard>
             <Toaster />
           </ThemeProvider>
         </AuthProvider>

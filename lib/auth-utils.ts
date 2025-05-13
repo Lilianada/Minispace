@@ -124,20 +124,38 @@ export async function getAuthenticatedUser(username: string, noRedirect = false)
       const headersList = await getHeaders();
       userId = headersList.get('x-user-id') || null;
       
-      // If no user ID in headers, verify the session cookie
+      // If no user ID in headers, verify the session cookie with grace period
       if (!userId && sessionCookie) {
-        userId = await verifySessionCookie(sessionCookie);
+        const validationResult = await validateSessionWithGracePeriod(sessionCookie, 10); // 10 minute grace period
+        
+        if (validationResult.isValid) {
+          userId = validationResult.userId;
+          
+          // If the token is expired but within grace period, add this info to the result
+          if (validationResult.isExpired) {
+            console.log('Session expired but within grace period, allowing access');
+          }
+        }
       }
     } catch (error) {
       console.error('Error in authentication:', error);
     }
   }
   
-  // If no user ID, handle accordingly
+  // If no user ID, check for cached session information before redirecting
   if (!userId) {
+    // Check client-side storage for session data (this won't work server-side)
+    // but adds a flag to indicate we should check client-side
     if (!noRedirect) {
-      // Only redirect if noRedirect is false
-      return { redirectTo: '/login', userId: null, userData: null };
+      // Instead of immediately redirecting, send back a special flag
+      // that client component can use to check local storage first
+      return { 
+        redirectTo: '/login', 
+        userId: null, 
+        userData: null,
+        checkClientSession: true,
+        redirectReason: 'No user ID found'
+      };
     } else {
       // Return null data if noRedirect is true
       return { userId: null, userData: null };
@@ -275,5 +293,64 @@ export async function createAndSetSessionCookie(idToken: string, response: Respo
       console.error('Error stack:', error.stack);
     }
     throw new Error('Unauthorized request');
+  }
+}
+
+/**
+ * Validates a session cookie with an optional grace period
+ * When a session is just expired, we can still allow access for a short period
+ * to prevent disrupting user experience for brief token expirations
+ */
+export async function validateSessionWithGracePeriod(
+  sessionCookie: string | undefined, 
+  graceMinutes: number = 5
+): Promise<{ 
+  isValid: boolean; 
+  userId: string | null; 
+  isExpired: boolean; 
+  expiryTime?: number 
+}> {
+  if (!sessionCookie) {
+    return { isValid: false, userId: null, isExpired: false };
+  }
+  
+  try {
+    // Try regular validation first
+    const userId = await verifySessionCookie(sessionCookie);
+    return { 
+      isValid: true, 
+      userId: userId, 
+      isExpired: false 
+    };
+  } catch (error: any) {
+    // Check if the error is due to an expired token
+    if (error.message && error.message.includes('expired')) {
+      try {
+        // Get expiry time from token (simplified approach)
+        const base64Payload = sessionCookie.split('.')[1];
+        const payload = JSON.parse(Buffer.from(base64Payload, 'base64').toString());
+        
+        if (payload && payload.exp) {
+          const expiryTime = payload.exp * 1000; // Convert to milliseconds
+          const now = Date.now();
+          const diffMs = now - expiryTime;
+          const diffMinutes = diffMs / (1000 * 60);
+          
+          // If within grace period, consider it still valid
+          if (diffMinutes <= graceMinutes) {
+            return { 
+              isValid: true, 
+              userId: payload.uid || payload.sub || null,
+              isExpired: true,
+              expiryTime
+            };
+          }
+        }
+      } catch (innerError) {
+        console.error('Error checking token expiry:', innerError);
+      }
+    }
+    
+    return { isValid: false, userId: null, isExpired: true };
   }
 }

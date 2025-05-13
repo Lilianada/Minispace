@@ -1,10 +1,11 @@
-import { ReactNode } from 'react';
+import { ReactNode, Suspense } from 'react';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { getAuthenticatedUser } from '@/lib/auth-utils';
 import Sidebar from '@/components/sidebar';
 import { User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import DashboardLoading from './loading';
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -60,7 +61,9 @@ export default async function DashboardLayout({
           </div>
         </header>
         <div className="flex-1 p-3 md:p-4">
-          {children}
+          <Suspense fallback={<DashboardLoading />}>
+            {children}
+          </Suspense>
         </div>
       </main>
     </div>

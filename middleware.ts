@@ -16,19 +16,46 @@ export async function middleware(request: NextRequest) {
     // Get the session cookie
     const sessionCookie = request.cookies.get('session')?.value;
     
-    // If no session cookie, redirect to login
-    if (!sessionCookie) {
+    // Check if we have a recent route activation for this path
+    // This helps prevent redirect loops and improves UX
+    const recentAuthHeader = request.headers.get('x-recent-auth');
+    const hasRecentAuth = recentAuthHeader === 'true';
+    
+    // If no session cookie AND we haven't recently attempted auth, redirect to login
+    if (!sessionCookie && !hasRecentAuth) {
+      // Get username from path for dynamic routes
+      const pathParts = pathname.split('/');
+      let username = '';
+      
+      // Check if this is a username/dashboard style path
+      if (pathParts.length > 2 && pathParts[2] === 'dashboard') {
+        username = pathParts[1];
+      }
+      
       const url = new URL('/login', request.url);
       url.searchParams.set('redirect', request.nextUrl.pathname);
-      return NextResponse.redirect(url);
+      
+      const response = NextResponse.redirect(url);
+      
+      // Set a temporary cookie to prevent redirect loops
+      response.cookies.set('recent_auth_attempt', 'true', { 
+        maxAge: 5, // 5 seconds to avoid redirect loops 
+        path: '/' 
+      });
+      
+      return response;
     }
     
-    // If there is a session cookie, we'll assume it's valid for now
+    // If there is a session cookie or recent auth attempt, we'll assume it's valid for now
     // The actual verification will happen in the API routes and server components
-    // This avoids using Firebase Admin in the middleware
     
     // Continue with the request
-    return NextResponse.next();
+    const response = NextResponse.next();
+    
+    // Add a header to indicate this is a protected route
+    response.headers.set('x-protected-route', 'true');
+    
+    return response;
   }
   
   // Handle subdomain routing for user blogs

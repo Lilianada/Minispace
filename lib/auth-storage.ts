@@ -98,10 +98,44 @@ export function clearAuthFromStorage(): void {
   }
 }
 
-// Extend session expiration time
+// Extend session expiration time and update activity timestamp
 export function extendSession(expiresInHours = 24): void {
   const session = getSessionFromStorage();
   if (!session) return;
   
+  // Update session expiry
   saveSessionToStorage(session.isAuthenticated, expiresInHours);
+  
+  // Update last active timestamp
+  localStorage.setItem("lastActive", Date.now().toString());
+  
+  // Also update user's lastUpdated time
+  const user = getUserFromStorage();
+  if (user) {
+    saveUserToStorage({
+      ...user,
+      lastUpdated: Date.now()
+    });
+  }
+}
+
+// Check if session is expired but within a recent grace period (useful for reducing immediate redirects)
+export function isSessionExpiredButRecent(graceMinutes = 5): boolean {
+  const session = getSessionFromStorage();
+  if (!session) return false;
+  
+  const now = Date.now();
+  const graceWindowMs = graceMinutes * 60 * 1000;
+  
+  // If session expired but within the grace period
+  return session.expiresAt < now && (now - session.expiresAt) < graceWindowMs;
+}
+
+// Get the remaining session time in seconds
+export function getSessionRemainingTime(): number {
+  const session = getSessionFromStorage();
+  if (!session) return 0;
+  
+  const remainingMs = Math.max(0, session.expiresAt - Date.now());
+  return Math.floor(remainingMs / 1000); // Convert to seconds
 }

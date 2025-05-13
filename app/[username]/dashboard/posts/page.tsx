@@ -67,7 +67,6 @@ export default function PostPage() {
           const fetchedArticles = querySnapshot.docs.map((doc) => ({
             id: doc.id,
             ...doc.data(),
-            views: Math.floor(Math.random() * 200) // Temporary random views for demo
           })) as Article[]
 
           setArticles(fetchedArticles)
@@ -91,7 +90,7 @@ export default function PostPage() {
             const fallbackArticles = fallbackSnapshot.docs.map((doc) => ({
               id: doc.id,
               ...doc.data(),
-              views: Math.floor(Math.random() * 200) // Temporary random views for demo
+             
             })) as Article[]
 
             // Sort by createdAt in descending order
